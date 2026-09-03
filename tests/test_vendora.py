@@ -528,11 +528,12 @@ class VendoraTestCase(unittest.TestCase):
             self.assertEqual(resp_empty.status_code, 200)
             data_empty = resp_empty.data.decode('utf-8')
 
-            self.assertIn("Not rated yet", data_empty)
-            self.assertIn("Not Rated Yet", data_empty)
+            self.assertIn("No reviews yet", data_empty)
+            self.assertIn("No Reviews Yet", data_empty)
             self.assertNotIn("4.8/5", data_empty)
             self.assertNotIn("4.8★", data_empty)
             self.assertNotIn("0.0/5", data_empty)
+            self.assertNotIn("Demo Rating", data_empty)
 
         finally:
             # Restore backed-up reviews

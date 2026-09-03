@@ -58,7 +58,7 @@
             <!-- Live Status Pill -->
             <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full glass-panel border border-orange-500/30 text-xs font-semibold text-orange-400 mb-6 slide-up shadow-sm">
                 <span class="pulsing-dot"></span>
-                <span>Full-Stack Marketplace Portfolio Project</span>
+                <span>Multi-Vendor Marketplace Platform</span>
             </div>
 
             <!-- Main Heading -->
@@ -68,7 +68,7 @@
 
             <!-- Supporting Paragraph -->
             <p class="text-lg sm:text-xl text-muted font-normal leading-relaxed mb-8 max-w-2xl slide-up" style="animation-delay: 0.2s">
-                Vendora is a full-stack marketplace demonstration platform built with Flask and SQLite. Discover products across independent vendor storefronts, test simulated UPI & Card checkouts, and experience real-time order lifecycle tracking.
+                Discover products across independent vendor storefronts, connect directly with trusted merchants, experience seamless checkouts, and track your orders in real time with Vendora.
             </p>
 
             <!-- CTA Button Row -->
@@ -84,7 +84,7 @@
                     </a>
                 {% else %}
                     <a href="/login" class="btn-glow px-8 py-4 rounded-xl font-semibold text-base text-white shadow-xl shadow-orange-500/25 flex items-center justify-center gap-3 group">
-                        <span>Explore Demo Marketplace</span>
+                        <span>Explore Marketplace</span>
                         <i class="fa-solid fa-arrow-right text-sm group-hover:translate-x-1 transition-transform"></i>
                     </a>
                     <a href="/register" class="glass-card hover:bg-white/10 px-8 py-4 rounded-xl font-semibold text-base text-main border border-glass flex items-center justify-center gap-3 transition-colors">
@@ -101,9 +101,9 @@
                         <i class="fa-solid fa-star"></i>
                     </div>
                     {% if avg_rating %}
-                        <span class="font-semibold text-main">{{ avg_rating }}/5 Demo Rating</span>
+                        <span class="font-semibold text-main">{{ avg_rating }}/5 Customer Rating</span>
                     {% else %}
-                        <span class="font-semibold text-muted">Not rated yet</span>
+                        <span class="font-semibold text-muted">No reviews yet</span>
                     {% endif %}
                 </div>
                 <div class="flex items-center gap-2">
@@ -255,30 +255,30 @@
         
         <div class="glass-card p-6 rounded-2xl text-center border border-glass">
             <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500 font-mono mb-1">{{ product_count }}+</p>
-            <p class="text-xs sm:text-sm font-semibold text-main">Seeded Demo Products</p>
-            <p class="text-[11px] text-muted mt-0.5">Electronics, Apparel & Home</p>
+            <p class="text-xs sm:text-sm font-semibold text-main">Products Available</p>
+            <p class="text-[11px] text-muted mt-0.5">Electronics, Fashion & Home</p>
         </div>
 
         <div class="glass-card p-6 rounded-2xl text-center border border-glass">
             <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500 font-mono mb-1">{{ vendor_count }}</p>
-            <p class="text-xs sm:text-sm font-semibold text-main">Active Demo Vendors</p>
-            <p class="text-[11px] text-muted mt-0.5">Simulated storefront accounts</p>
+            <p class="text-xs sm:text-sm font-semibold text-main">Active Storefronts</p>
+            <p class="text-[11px] text-muted mt-0.5">Independent merchant stores</p>
         </div>
 
         <div class="glass-card p-6 rounded-2xl text-center border border-glass">
             <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 font-mono mb-1">{{ order_count }}</p>
-            <p class="text-xs sm:text-sm font-semibold text-main">Demo Orders Logged</p>
-            <p class="text-[11px] text-muted mt-0.5">Order workflow simulation</p>
+            <p class="text-xs sm:text-sm font-semibold text-main">Orders Processed</p>
+            <p class="text-[11px] text-muted mt-0.5">Full milestone delivery tracking</p>
         </div>
 
         <div class="glass-card p-6 rounded-2xl text-center border border-glass">
             {% if avg_rating %}
                 <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-500 font-mono mb-1">{{ avg_rating }}★</p>
-                <p class="text-xs sm:text-sm font-semibold text-main">Average Demo Rating</p>
-                <p class="text-[11px] text-muted mt-0.5">Derived from seeded reviews</p>
+                <p class="text-xs sm:text-sm font-semibold text-main">Customer Rating</p>
+                <p class="text-[11px] text-muted mt-0.5">Based on authentic buyer reviews</p>
             {% else %}
                 <p class="text-3xl sm:text-4xl font-black text-muted font-mono mb-1">—</p>
-                <p class="text-xs sm:text-sm font-semibold text-main">Not Rated Yet</p>
+                <p class="text-xs sm:text-sm font-semibold text-main">No Reviews Yet</p>
                 <p class="text-[11px] text-muted mt-0.5">Awaiting customer reviews</p>
             {% endif %}
         </div>
@@ -598,7 +598,7 @@
                 Ready to Experience <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-500 to-yellow-500">Vendora</span>?
             </h2>
             <p class="text-base sm:text-lg text-muted mb-8 leading-relaxed">
-                Explore a full-stack marketplace platform built to demonstrate real-world customer, vendor, and order management workflows.
+                Discover curated products, connect with verified vendor storefronts, and manage your complete marketplace experience.
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
                 {% if session.get('user') %}
