@@ -1,13 +1,18 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, abort
 import sqlite3
 import os
 import re
 import base64
 import io
+import uuid
 from urllib.parse import quote
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from PIL import Image
 
 try:
     from dotenv import load_dotenv
@@ -21,7 +26,28 @@ except ImportError:
     qrcode = None
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "vendora-dev-secret-key-change-in-production")
+
+# Enforce secure SECRET_KEY in production
+flask_env = os.environ.get("FLASK_ENV", "development").lower()
+secret_key = os.environ.get("SECRET_KEY")
+if flask_env == "production":
+    if not secret_key or secret_key in ("vendora-dev-secret-key-change-in-production", "change-me-to-a-long-random-string"):
+        raise ValueError("CRITICAL: SECRET_KEY environment variable must be set to a secure unique value in production!")
+app.secret_key = secret_key or "vendora-dev-secret-key-change-in-production"
+
+# Configure maximum upload size (5 MB limit)
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+
+# CSRF Protection
+csrf = CSRFProtect(app)
+
+# Login & Auth Rate Limiting
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=[],
+    storage_uri="memory://",
+)
 
 # Date/datetime strings we may read from SQLite or legacy rows
 _INDIAN_DISPLAY_DT = '%d/%m/%Y, %I:%M %p'
@@ -282,6 +308,94 @@ def _finalize_customer_payment(
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.jfif'}
+
+def allowed_image_file(filename):
+    if not filename or '.' not in filename:
+        return False
+    ext = os.path.splitext(filename)[1].lower()
+    return ext in ALLOWED_IMAGE_EXTENSIONS
+
+def validate_and_save_image(file_storage):
+    """
+    Safely validates and stores an uploaded product image.
+    - Verifies allowed file extension (.jpg, .jpeg, .png, .webp, .jfif)
+    - Verifies actual image content via Pillow
+    - Generates collision-free, path-traversal safe filename
+    Returns relative path ('uploads/filename.ext') or None if invalid.
+    """
+    if not file_storage or not file_storage.filename or file_storage.filename.strip() == '':
+        return None
+
+    if not allowed_image_file(file_storage.filename):
+        return None
+
+    # Validate actual image content
+    try:
+        file_storage.seek(0)
+        with Image.open(file_storage) as img:
+            img.verify()
+        file_storage.seek(0)
+    except Exception:
+        try:
+            file_storage.seek(0)
+        except Exception:
+            pass
+        return None
+
+    ext = os.path.splitext(file_storage.filename)[1].lower()
+    clean_base = secure_filename(os.path.splitext(file_storage.filename)[0]) or 'product'
+    unique_filename = f"{clean_base}_{uuid.uuid4().hex[:8]}{ext}"
+    dest_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+    file_storage.save(dest_path)
+    return f"uploads/{unique_filename}"
+
+def validate_password_strength(password):
+    """
+    Unified server-side password validation policy:
+    - Minimum 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one number
+    - At least one special character
+    Returns (is_valid: bool, error_message: str)
+    """
+    if not password or len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter."
+    if not any(c.islower() for c in password):
+        return False, "Password must contain at least one lowercase letter."
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one number."
+    if not any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?/~`' for c in password):
+        return False, "Password must contain at least one special character."
+    return True, ""
+
+def validate_price(price_input):
+    """
+    Server-side price validation:
+    - Must exist, be numeric, and strictly > 0
+    - Enforces maximum upper limit (<= 10,000,000)
+    - Returns (is_valid: bool, formatted_string_or_error: str)
+    """
+    if price_input is None:
+        return False, "Price is required."
+    clean = str(price_input).strip().replace('₹', '').replace('$', '').replace(',', '')
+    if not clean:
+        return False, "Price is required."
+    try:
+        val = float(clean)
+        if val <= 0:
+            return False, "Price must be greater than zero."
+        if val > 10000000:
+            return False, "Price cannot exceed ₹1,00,00,000."
+        if val.is_integer():
+            return True, str(int(val))
+        return True, f"{val:.2f}"
+    except (ValueError, TypeError):
+        return False, "Invalid price. Please enter a valid positive numeric amount."
 
 # ---------------------------------
 # SMART IMAGE DETECTION
@@ -624,20 +738,13 @@ def settings():
                 except Exception:
                     is_correct = False
 
+            is_valid_pwd, pwd_err = validate_password_strength(new_password)
             if not is_correct:
                 error = "Current password is incorrect"
             elif new_password != confirm_password:
                 error = "New passwords do not match"
-            elif len(new_password) < 8:
-                error = "Password must be at least 8 characters"
-            elif not any(c.isupper() for c in new_password):
-                error = "Password must contain at least one uppercase letter"
-            elif not any(c.islower() for c in new_password):
-                error = "Password must contain at least one lowercase letter"
-            elif not any(c.isdigit() for c in new_password):
-                error = "Password must contain at least one number"
-            elif not any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?' for c in new_password):
-                error = "Password must contain at least one special character"
+            elif not is_valid_pwd:
+                error = pwd_err
             else:
                 # Password is valid, update it with secure hash
                 hashed_new = generate_password_hash(new_password)
@@ -658,6 +765,7 @@ def settings():
     return render_template('settings.html', user=user, error=error)
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute; 30 per hour", methods=["POST"])
 def login():
 
     conn = get_db()
@@ -714,11 +822,20 @@ def register():
 
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        role = request.form.get('role', 'customer').strip()
+        role = request.form.get('role', 'customer').strip().lower()
         mobile = request.form.get('mobile', '').strip()
 
         if not username or not password:
             error = "Username and password are required"
+            return render_template('register.html', error=error)
+
+        if role not in ('customer', 'vendor'):
+            error = "Invalid account role. Allowed roles are 'customer' and 'vendor'."
+            return render_template('register.html', error=error)
+
+        is_valid_pwd, pwd_err = validate_password_strength(password)
+        if not is_valid_pwd:
+            error = pwd_err
             return render_template('register.html', error=error)
 
         existing_user = conn.execute(
@@ -778,8 +895,8 @@ def profile():
     if role == "vendor":
 
         total_customers = conn.execute(
-        "SELECT COUNT(*) FROM connections WHERE vendor=?",
-        (session['user'],)
+            "SELECT COUNT(*) FROM connections WHERE vendor=?",
+            (session['user'],)
         ).fetchone()[0]
         connected_customers = conn.execute(
             "SELECT customer FROM connections WHERE vendor=? ORDER BY id DESC",
@@ -787,11 +904,13 @@ def profile():
         ).fetchall()
 
         total_orders = conn.execute(
-            "SELECT COUNT(*) FROM orders"
+            "SELECT COUNT(*) FROM orders WHERE vendor=?",
+            (session['user'],)
         ).fetchone()[0]
 
         total_reviews = conn.execute(
-            "SELECT COUNT(*) FROM reviews"
+            "SELECT COUNT(*) FROM reviews WHERE vendor=?",
+            (session['user'],)
         ).fetchone()[0]
 
         return render_template(
@@ -809,7 +928,7 @@ def profile():
     else:
 
         total_vendors = conn.execute(
-        "SELECT COUNT(*) FROM users WHERE role='vendor'"
+            "SELECT COUNT(*) FROM users WHERE role='vendor'"
         ).fetchone()[0]
 
         connected_vendors = conn.execute(
@@ -818,11 +937,13 @@ def profile():
         ).fetchall()
 
         total_orders = conn.execute(
-            "SELECT COUNT(*) FROM orders"
+            "SELECT COUNT(*) FROM orders WHERE customer=?",
+            (session['user'],)
         ).fetchone()[0]
 
         total_payments = conn.execute(
-            "SELECT COUNT(*) FROM payments"
+            "SELECT COUNT(*) FROM payments WHERE customer=?",
+            (session['user'],)
         ).fetchone()[0]
 
         return render_template(
@@ -879,26 +1000,36 @@ def products():
 
     if role == "vendor":
 
+        error = ""
         if request.method == 'POST':
 
-            name = request.form['name']
-            price = request.form['price']
+            name = request.form.get('name', '').strip()
+            price_raw = request.form.get('price', '')
             vendor = session['user']
             image_path = ""
 
-            if 'image' in request.files:
-                file = request.files['image']
-                if file.filename != '':
-                    filename = secure_filename(file.filename)
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    image_path = f"uploads/{filename}"
+            valid_price, formatted_price = validate_price(price_raw)
+            if not name:
+                error = "Product name is required."
+            elif not valid_price:
+                error = formatted_price
+            else:
+                if 'image' in request.files:
+                    file = request.files['image']
+                    if file and file.filename != '':
+                        saved = validate_and_save_image(file)
+                        if saved:
+                            image_path = saved
+                        else:
+                            error = "Invalid image file. Only JPG, PNG, WEBP, and JFIF images under 5 MB are allowed."
 
-            conn.execute(
-                "INSERT INTO products(vendor,name,price,image,availability) VALUES(?,?,?,?,?)",
-                (vendor,name,price,image_path,"In Stock")
-            )
-
-            conn.commit()
+                if not error:
+                    conn.execute(
+                        "INSERT INTO products(vendor,name,price,image,availability) VALUES(?,?,?,?,?)",
+                        (vendor, name, formatted_price, image_path, "In Stock")
+                    )
+                    conn.commit()
+                    return redirect('/products')
 
         products = conn.execute(
             "SELECT * FROM products WHERE vendor=? ORDER BY id DESC",
@@ -907,7 +1038,8 @@ def products():
 
         return render_template(
             'products.html',
-            products=products
+            products=products,
+            error=error
         )
 
     # -------------------------
@@ -952,37 +1084,48 @@ def edit_product(id):
         return redirect('/login')
 
     conn = get_db()
-    name = request.form['name']
-    price = request.form['price']
-    availability = request.form['availability']
-    
+    # Enforce vendor multi-tenant isolation
+    prod = conn.execute("SELECT * FROM products WHERE id=? AND vendor=?", (id, session['user'])).fetchone()
+    if not prod:
+        return redirect('/products')
+
+    name = request.form.get('name', '').strip() or prod['name']
+    price_raw = request.form.get('price', '')
+    availability = request.form.get('availability', 'In Stock')
+    if availability not in ('In Stock', 'Out Of Stock'):
+        availability = 'In Stock'
+
+    valid_price, formatted_price = validate_price(price_raw)
+    if not valid_price:
+        formatted_price = prod['price']
+
     # Check if a new image was uploaded
     if 'image' in request.files:
         file = request.files['image']
-        if file.filename != '':
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            image_path = f"uploads/{filename}"
-            conn.execute(
-                "UPDATE products SET name=?, price=?, availability=?, image=? WHERE id=? AND vendor=?",
-                (name, price, availability, image_path, id, session['user'])
-            )
-            conn.commit()
-            return redirect('/products')
-            
+        if file and file.filename != '':
+            saved = validate_and_save_image(file)
+            if saved:
+                conn.execute(
+                    "UPDATE products SET name=?, price=?, availability=?, image=? WHERE id=? AND vendor=?",
+                    (name, formatted_price, availability, saved, id, session['user'])
+                )
+                conn.commit()
+                return redirect('/products')
+
     conn.execute(
         "UPDATE products SET name=?, price=?, availability=? WHERE id=? AND vendor=?",
-        (name, price, availability, id, session['user'])
+        (name, formatted_price, availability, id, session['user'])
     )
     conn.commit()
     return redirect('/products')
 
-@app.route('/delete_product/<int:id>')
+@app.route('/delete_product/<int:id>', methods=['POST'])
 def delete_product(id):
     if 'user' not in session or session.get('role') != 'vendor':
         return redirect('/login')
 
     conn = get_db()
+    # Enforce multi-tenant isolation: only the owning vendor can delete this product
     conn.execute("DELETE FROM products WHERE id=? AND vendor=?", (id, session['user']))
     conn.commit()
     return redirect('/products')
@@ -1472,7 +1615,7 @@ def select_vendor():
 @app.route('/add_order', methods=['POST'])
 def add_order():
 
-    if 'user' not in session:
+    if 'user' not in session or session.get('role') != 'customer':
         return redirect('/login')
 
     product_id = request.form.get('product_id')
@@ -1487,7 +1630,7 @@ def add_order():
         (product_id,)
     ).fetchone()
 
-    if not product:
+    if not product or product['availability'] == 'Out Of Stock':
         return redirect('/products')
 
     vendor = product['vendor']
@@ -1705,13 +1848,34 @@ def logout():
     return redirect('/')
 
 
-# ---------------------------------
-# ERROR HANDLERS
-# ---------------------------------
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    return render_template('error.html', code=400, message=f"CSRF validation failed: {e.description}. Please refresh and try again."), 400
+
+
+@app.errorhandler(400)
+def bad_request(e):
+    return render_template('error.html', code=400, message="Bad request. Please verify your submitted data."), 400
+
 
 @app.errorhandler(404)
 def not_found(e):
     return render_template('error.html', code=404, message="The page you are looking for does not exist."), 404
+
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    return render_template('error.html', code=405, message="The requested HTTP method is not allowed for this endpoint."), 405
+
+
+@app.errorhandler(413)
+def request_entity_too_large(e):
+    return render_template('error.html', code=413, message="The uploaded file exceeds the 5 MB limit. Please choose a smaller image."), 413
+
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return render_template('error.html', code=429, message="Too many requests. Please slow down and try again later."), 429
 
 
 @app.errorhandler(403)

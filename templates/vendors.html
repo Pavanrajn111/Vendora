@@ -44,6 +44,7 @@
                     </div>
                 {% else %}
                     <form method="POST" action="/select_vendor" class="mb-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="vendor" value="{{ vendor['username'] }}">
                         <button type="submit" class="btn-glow w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2">
                             <i class="fa-solid fa-link"></i> Connect

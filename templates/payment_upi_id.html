@@ -15,6 +15,7 @@
     {% endif %}
 
     <form method="POST" id="upi-form" class="space-y-5 glass-card p-6 md:p-8 rounded-2xl border border-glass" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div>
             <label class="block text-xs font-medium text-muted mb-1">Enter UPI ID</label>
             <input type="text" name="upi_id" id="upi_id" autocomplete="off" required

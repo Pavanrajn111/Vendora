@@ -77,6 +77,7 @@
                             </div>
                             {% else %}
                             <form method="POST" action="/update_order" class="flex flex-col gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="order_id" value="{{ order['id'] }}">
 
                                 <div class="flex flex-wrap gap-2 items-center">
@@ -300,6 +301,7 @@
                 <div class="mt-6 pt-4 border-t border-glass text-center">
                     <form method="POST" action="/cancel_order"
                         onsubmit="return confirm('Are you sure you want to cancel this order? This action cannot be undone.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="order_id" value="{{ order['id'] }}">
                         <button type="submit"
                             class="text-red-400 hover:text-red-300 text-sm font-medium transition-colors">

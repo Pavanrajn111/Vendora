@@ -37,7 +37,6 @@ Vendora provides an intuitive, responsive multi-vendor platform where:
 ### 🎨 Design & Experience
 - **Glassmorphism UI**: Modern frosted-glass aesthetic with smooth transitions and CSS animations.
 - **Dark / Light Theme Toggle**: Persistent theme switching with automatic system preference detection.
-- **Responsive Layout**: Designed for mobile, tablet, and desktop viewports.
 - **Smart Image Resolver**: Case-insensitive and multi-extension (.png, .jpg, .jpeg, .jfif, .webp) asset discovery with SVG fallback.
 
 ---
@@ -45,23 +44,25 @@ Vendora provides an intuitive, responsive multi-vendor platform where:
 ## Tech Stack
 
 - **Backend**: Python 3.10+, Flask 3.0
-- **Database**: SQLite3 (auto-initializing schema and migrations)
-- **Security**: Werkzeug password hashing (PBKDF2/scrypt), session-based role authorization, environment configuration
+- **Database**: SQLite3 (auto-initializing schema and migrations with parameterized queries)
+- **Security**: Flask-WTF (CSRF Protection), Flask-Limiter (Rate Limiting), Werkzeug password hashing (PBKDF2/scrypt), Pillow (Image validation), session-based role authorization
 - **Frontend**: Jinja2 Templates, HTML5, Vanilla JavaScript, Tailwind CSS, FontAwesome 6, Google Fonts (Inter)
 - **Utilities**: qrcode[pil] (Dynamic UPI QR generation), python-dotenv
-- **WSGI / Deployment**: Gunicorn
+- **WSGI / Deployment**: Gunicorn, GitHub Actions CI
 
 ---
 
 ## Project Structure
 
-`	ext
-vendora-marketplace/
+```text
+Vendora/
+├── .github/workflows/      # Automated CI pipeline (GitHub Actions)
 ├── app.py                  # Main Flask application entry point, routes & database handlers
 ├── requirements.txt        # Production & runtime dependencies
 ├── Procfile                # Deployment process declaration (Gunicorn)
 ├── .env.example            # Environment variable template
 ├── .gitignore              # Git ignore rules (ignores .env, databases, bytecode)
+├── LICENSE                 # MIT License
 ├── README.md               # Project documentation
 ├── seed_demo_data.py       # Idempotent demo dataset seeder
 ├── static/
@@ -84,27 +85,42 @@ vendora-marketplace/
 │   ├── payment_*.html      # Checkout, Card & UPI payment templates
 │   ├── reviews.html        # Customer reviews & ratings
 │   ├── settings.html       # User profile & security settings
-│   └── error.html          # Custom 404 / 403 / 500 error pages
+│   └── error.html          # Custom 404 / 403 / 405 / 413 / 429 / 500 error pages
 ├── tests/
-│   ├── test_vendora.py     # Automated end-to-end unittest suite
+│   ├── test_vendora.py     # Automated end-to-end unittest suite (15+ tests)
 │   ├── test_endpoints.py   # Endpoint smoke tests
 │   ├── test_image_detection.py # Image resolver tests
 │   └── test_url_for.py     # Static asset URL builder test
 └── scripts/                # Database utilities & migration helpers
-`
+```
+
+---
+
+## Security Highlights
+
+Vendora implements defense-in-depth security practices suitable for production portfolio deployment:
+
+1. **CSRF Protection**: Comprehensive CSRF defense across all state-changing endpoints and forms using `Flask-WTF`.
+2. **POST-Only Destructive Actions**: Product deletion is strictly POST-only with confirmation dialogs and tenant ownership verification.
+3. **Password Security**: Werkzeug PBKDF2/scrypt password hashing with server-side strength validation (8+ characters, uppercase, lowercase, digit, special symbol).
+4. **Login Rate Limiting**: Anti-brute-force rate limiting on `/login` via `Flask-Limiter`.
+5. **Secure File Uploads**: Strict whitelist (`.jpg`, `.jpeg`, `.png`, `.webp`), 5 MB file size ceiling (`MAX_CONTENT_LENGTH`), and in-memory Pillow image verification to prevent malicious file uploads.
+6. **SQL Injection Defense**: 100% parameterized SQL queries via SQLite3.
+7. **Multi-Tenant Isolation**: Server-side authorization checks ensure vendors cannot access, edit, or delete another vendor's products or orders.
+8. **Input & Price Validation**: Server-side price validation enforces numeric positive values with appropriate decimal formatting.
 
 ---
 
 ## Installation & Quickstart
 
 ### 1. Clone Repository
-`ash
-git clone https://github.com/<your-username>/vendora-marketplace.git
-cd vendora-marketplace
-`
+```bash
+git clone https://github.com/Pavanrajn111/Vendora.git
+cd Vendora
+```
 
 ### 2. Create Virtual Environment
-`ash
+```bash
 # On Linux / macOS:
 python3 -m venv .venv
 source .venv/bin/activate
@@ -112,43 +128,43 @@ source .venv/bin/activate
 # On Windows (PowerShell):
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-`
+```
 
 ### 3. Install Dependencies
-`ash
+```bash
 pip install -r requirements.txt
-`
+```
 
 ### 4. Configure Environment
-`ash
+```bash
 # Copy example environment configuration
 cp .env.example .env
-`
+```
 
-Edit .env to set your custom secret key:
-`env
+Edit `.env` to set your custom secret key:
+```env
 FLASK_APP=app.py
 FLASK_ENV=development
 SECRET_KEY=your-secure-random-secret-key
 COLLECT_UPI_VPA=merchant.vendora@ptyes
-`
+```
 
 ### 5. Seed Demo Data (Optional)
-`ash
+```bash
 python seed_demo_data.py
-`
+```
 
 ### 6. Run Application
-`ash
+```bash
 python app.py
-`
+```
 Open your browser and navigate to: **http://localhost:5000**
 
 ---
 
 ## Demo Credentials
 
-For quick evaluation, the following pre-configured demo accounts can be used (password: pass123 for all seeded accounts):
+For quick evaluation, the following pre-configured demo accounts can be used (password: `pass123` for all seeded accounts):
 
 | Role | Username | Password | Purpose |
 |---|---|---|---|
@@ -163,18 +179,17 @@ For quick evaluation, the following pre-configured demo accounts can be used (pa
 
 ## Testing
 
-Run the automated test suite with Python's built-in unittest runner or pytest:
+Run the automated test suite with Python's built-in unittest runner:
 
-`ash
-# Run full test suite
+```bash
+# Run full test suite (16 tests)
+python -m unittest discover -s tests
+
+# Or run individual test modules
 python -m unittest tests/test_vendora.py
-
-# Run endpoint smoke tests
-python tests/test_endpoints.py
-
-# Run image detection tests
-python tests/test_image_detection.py
-`
+python -m unittest tests/test_endpoints.py
+python -m unittest tests/test_image_detection.py
+```
 
 ---
 
@@ -182,9 +197,9 @@ python tests/test_image_detection.py
 
 To run in production using Gunicorn:
 
-`ash
+```bash
 gunicorn app:app --bind 0.0.0.0:5000 --workers 4
-`
+```
 
 Set the following environment variables on your hosting provider (e.g. Render, Railway, AWS, DigitalOcean):
 - SECRET_KEY: A cryptographically secure random string.

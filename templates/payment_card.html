@@ -15,6 +15,7 @@
     {% endif %}
 
     <form method="POST" id="card-pay-form" class="space-y-5" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="relative glass-card p-6 md:p-8 rounded-2xl border border-glass overflow-hidden shadow-xl">
             <div class="absolute top-4 right-4 flex gap-2 text-2xl opacity-60 pointer-events-none">
                 <i class="fa-brands fa-cc-visa text-main"></i>

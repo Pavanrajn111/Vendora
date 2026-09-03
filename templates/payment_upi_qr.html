@@ -35,6 +35,7 @@
         <p class="text-[11px] text-muted mb-6">Open {{ platform_label }}, scan this QR, complete the payment, then confirm below so your vendor can verify.</p>
 
         <form method="POST" class="space-y-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn-glow w-full py-3 rounded-xl font-semibold transition-transform hover:scale-[1.01]">
                 I have completed payment in my UPI app
             </button>

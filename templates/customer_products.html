@@ -41,6 +41,7 @@
                 
                 <div class="mt-auto pt-4 border-t border-glass">
                     <form method="POST" action="/add_order">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="product_id" value="{{ p['id'] }}">
                         {% if p['availability'] == 'Out Of Stock' %}
                             <button disabled class="w-full py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed flex items-center justify-center gap-2">

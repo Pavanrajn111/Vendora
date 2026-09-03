@@ -38,6 +38,7 @@
             </div>
             
             <form method="POST" class="space-y-5" onsubmit="return validateForm()">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
                     <label for="username" class="block text-sm font-medium text-main mb-1">Username</label>
                     <div class="relative">

@@ -22,7 +22,14 @@
             </button>
             <h2 class="text-2xl font-bold mb-6 text-main border-b border-glass pb-3"><i class="fa-solid fa-box-open text-pink-400 mr-2"></i> Add New Product</h2>
             
+            {% if error %}
+            <div class="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg mb-4 text-sm font-medium flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i> {{ error }}
+            </div>
+            {% endif %}
+            
             <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
                     <label for="image" class="block text-sm font-medium text-main mb-1">Product Image</label>
                     <input type="file" name="image" id="image" accept="image/*" class="glass-input w-full px-4 py-2 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-500/20 file:text-pink-400 hover:file:bg-pink-500/30">
@@ -73,9 +80,12 @@
                     <button onclick="document.getElementById('edit-product-modal-{{ p['id'] }}').classList.remove('hidden')" class="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 px-3 py-1.5 rounded transition-colors text-sm font-medium flex items-center gap-1">
                         <i class="fa-solid fa-pen-to-square"></i> Edit
                     </button>
-                    <a href="/delete_product/{{ p['id'] }}" class="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-3 py-1.5 rounded transition-colors text-sm font-medium flex items-center gap-1" onclick="return confirm('Are you sure you want to delete this product?')">
-                        <i class="fa-solid fa-trash-can"></i> Delete
-                    </a>
+                    <form method="POST" action="/delete_product/{{ p['id'] }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this product?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-3 py-1.5 rounded transition-colors text-sm font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i> Delete
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -89,6 +99,7 @@
                 <h2 class="text-2xl font-bold mb-6 text-main border-b border-glass pb-3"><i class="fa-solid fa-pen text-indigo-400 mr-2"></i> Edit Product</h2>
                 
                 <form method="POST" action="/edit_product/{{ p['id'] }}" enctype="multipart/form-data" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div>
                         <label class="block text-sm font-medium text-main mb-1">Update Product Image</label>
                         {% if p['image'] %}
@@ -101,7 +112,7 @@
                         <input type="text" name="name" value="{{ p['name'] }}" required class="glass-input w-full px-4 py-2 rounded-lg">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-main mb-1">Price ($)</label>
+                        <label class="block text-sm font-medium text-main mb-1">Price (₹)</label>
                         <input type="number" step="0.01" name="price" value="{{ p['price'] }}" required class="glass-input w-full px-4 py-2 rounded-lg">
                     </div>
                     <div>
