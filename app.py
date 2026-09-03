@@ -33,10 +33,7 @@ flask_env = os.environ.get("FLASK_ENV", "development").lower()
 secret_key = os.environ.get("SECRET_KEY")
 if flask_env == "production":
     if not secret_key or secret_key in ("vendora-dev-secret-key-change-in-production", "change-me-to-a-long-random-string"):
-        if os.environ.get("VERCEL"):
-            secret_key = "vendora-vercel-" + os.environ.get("VERCEL_DEPLOYMENT_ID", os.environ.get("VERCEL_GIT_COMMIT_SHA", "prod-secret-fallback-key"))
-        else:
-            raise ValueError("CRITICAL: SECRET_KEY environment variable must be set to a secure unique value in production!")
+        raise ValueError("CRITICAL: SECRET_KEY environment variable must be set to a secure unique value in production!")
 app.secret_key = secret_key or "vendora-dev-secret-key-change-in-production"
 
 # Configure maximum upload size (5 MB limit)
