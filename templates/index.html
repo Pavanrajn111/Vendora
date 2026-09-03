@@ -100,7 +100,11 @@
                     <div class="flex text-amber-400 text-sm">
                         <i class="fa-solid fa-star"></i>
                     </div>
-                    <span class="font-semibold text-main">{{ avg_rating }}/5 Demo Rating</span>
+                    {% if avg_rating %}
+                        <span class="font-semibold text-main">{{ avg_rating }}/5 Demo Rating</span>
+                    {% else %}
+                        <span class="font-semibold text-muted">Not rated yet</span>
+                    {% endif %}
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-building text-blue-400 text-sm"></i>
@@ -268,9 +272,15 @@
         </div>
 
         <div class="glass-card p-6 rounded-2xl text-center border border-glass">
-            <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-500 font-mono mb-1">{{ avg_rating }}★</p>
-            <p class="text-xs sm:text-sm font-semibold text-main">Average Demo Rating</p>
-            <p class="text-[11px] text-muted mt-0.5">Derived from seeded reviews</p>
+            {% if avg_rating %}
+                <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-500 font-mono mb-1">{{ avg_rating }}★</p>
+                <p class="text-xs sm:text-sm font-semibold text-main">Average Demo Rating</p>
+                <p class="text-[11px] text-muted mt-0.5">Derived from seeded reviews</p>
+            {% else %}
+                <p class="text-3xl sm:text-4xl font-black text-muted font-mono mb-1">—</p>
+                <p class="text-xs sm:text-sm font-semibold text-main">Not Rated Yet</p>
+                <p class="text-[11px] text-muted mt-0.5">Awaiting customer reviews</p>
+            {% endif %}
         </div>
 
     </div>

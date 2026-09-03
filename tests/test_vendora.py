@@ -506,6 +506,44 @@ class VendoraTestCase(unittest.TestCase):
             self.assertNotEqual(check_order['status'], 'Cancelled')
             self.client.get('/logout')
 
+    def test_19_rating_calculation_and_empty_state(self):
+        """Verify rating is calculated dynamically and handles empty reviews honestly."""
+        conn = get_db()
+        # Backup existing reviews
+        existing_reviews = conn.execute("SELECT * FROM reviews").fetchall()
+
+        try:
+            # Case A: Reviews exist -> check calculation
+            resp = self.client.get('/')
+            self.assertEqual(resp.status_code, 200)
+            if existing_reviews:
+                data = resp.data.decode('utf-8')
+                self.assertNotIn("4.8/5 Demo Rating", data)  # Must not use hardcoded 4.8
+
+            # Case B: Zero reviews -> must show honest empty state, NOT fabricated rating
+            conn.execute("DELETE FROM reviews")
+            conn.commit()
+
+            resp_empty = self.client.get('/')
+            self.assertEqual(resp_empty.status_code, 200)
+            data_empty = resp_empty.data.decode('utf-8')
+
+            self.assertIn("Not rated yet", data_empty)
+            self.assertIn("Not Rated Yet", data_empty)
+            self.assertNotIn("4.8/5", data_empty)
+            self.assertNotIn("4.8★", data_empty)
+            self.assertNotIn("0.0/5", data_empty)
+
+        finally:
+            # Restore backed-up reviews
+            conn.execute("DELETE FROM reviews")
+            for r in existing_reviews:
+                conn.execute(
+                    "INSERT INTO reviews (vendor, rating, comment, customer) VALUES (?, ?, ?, ?)",
+                    (r['vendor'], r['rating'], r['comment'], r['customer'])
+                )
+            conn.commit()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -739,7 +739,7 @@ def index():
     product_count = 0
     vendor_count = 0
     order_count = 0
-    avg_rating = 4.8
+    avg_rating = None
     try:
         p_row = conn.execute("SELECT COUNT(*) FROM products").fetchone()
         if p_row:
@@ -750,8 +750,8 @@ def index():
         o_row = conn.execute("SELECT COUNT(*) FROM orders").fetchone()
         if o_row:
             order_count = o_row[0]
-        r_row = conn.execute("SELECT ROUND(AVG(rating), 1) FROM reviews").fetchone()
-        if r_row and r_row[0]:
+        r_row = conn.execute("SELECT ROUND(AVG(CAST(rating AS FLOAT)), 1) FROM reviews").fetchone()
+        if r_row and r_row[0] is not None:
             avg_rating = r_row[0]
     except Exception:
         pass
