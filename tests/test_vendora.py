@@ -418,6 +418,94 @@ class VendoraTestCase(unittest.TestCase):
         self.assertIsNotNone(prod_check)
         self.assertEqual(prod_check['vendor'], 'autotest_vendor')
 
+    def test_16_login_required_decorator(self):
+        """Verify @login_required decorator redirects unauthenticated requests across all protected routes."""
+        self.client.get('/logout')
+        protected_endpoints = [
+            ('/settings', 'GET'),
+            ('/dashboard', 'GET'),
+            ('/profile', 'GET'),
+            ('/vendors', 'GET'),
+            ('/products', 'GET'),
+            ('/orders', 'GET'),
+            ('/delivery', 'GET'),
+            ('/payments', 'GET'),
+            ('/reviews', 'GET'),
+            ('/select_vendor', 'POST'),
+            ('/cancel_order', 'POST'),
+            ('/vendor_products/TechNova', 'GET'),
+            ('/vendor_reviews/TechNova', 'GET'),
+        ]
+        for path, method in protected_endpoints:
+            if method == 'GET':
+                resp = self.client.get(path, follow_redirects=False)
+            else:
+                resp = self.client.post(path, follow_redirects=False)
+            self.assertIn(resp.status_code, (301, 302), f"Failed for {path}")
+            self.assertIn('/login', resp.headers.get('Location', ''), f"Failed for {path}")
+
+    def test_17_role_required_decorator(self):
+        """Verify @role_required decorator enforces role isolation between vendors and customers."""
+        # 1. Log in as customer -> attempt vendor-only routes
+        self.client.post('/login', data={'username': 'autotest_customer', 'password': 'Password@123'})
+        vendor_only_posts = [
+            '/edit_product/1',
+            '/delete_product/1',
+            '/update_order',
+            '/update_payment',
+            '/process_refund',
+        ]
+        for path in vendor_only_posts:
+            resp = self.client.post(path, data={'payment_id': '1', 'order_id': '1', 'status': 'Accepted'}, follow_redirects=False)
+            self.assertIn(resp.status_code, (301, 302), f"Customer accessed vendor route {path}")
+            self.assertIn('/login', resp.headers.get('Location', ''))
+        self.client.get('/logout')
+
+        # 2. Log in as vendor -> attempt customer-only routes
+        self.client.post('/login', data={'username': 'autotest_vendor', 'password': 'Password@123'})
+        customer_only_routes = [
+            ('/add_order', 'POST'),
+            ('/payment/order/1', 'GET'),
+            ('/payment/order/1/card', 'GET'),
+            ('/payment/order/1/upi', 'GET'),
+        ]
+        for path, method in customer_only_routes:
+            if method == 'GET':
+                resp = self.client.get(path, follow_redirects=False)
+            else:
+                resp = self.client.post(path, data={'product_id': '1'}, follow_redirects=False)
+            self.assertIn(resp.status_code, (301, 302), f"Vendor accessed customer route {path}")
+            self.assertIn('/login', resp.headers.get('Location', ''))
+        self.client.get('/logout')
+
+    def test_18_customer_order_ownership_isolation(self):
+        """Verify customer B cannot checkout or cancel customer A's orders."""
+        # Register Customer B
+        self.client.post('/register', data={
+            'username': 'autotest_customer_b',
+            'password': 'Password@123',
+            'role': 'customer',
+            'mobile': '9000000004'
+        })
+        conn = get_db()
+        # Find Customer A's order
+        order_a = conn.execute("SELECT * FROM orders WHERE customer='autotest_customer' LIMIT 1").fetchone()
+        if order_a:
+            order_id = order_a['id']
+            # Customer B logs in
+            self.client.post('/login', data={'username': 'autotest_customer_b', 'password': 'Password@123'})
+
+            # Customer B attempts to view payment checkout for Customer A's order -> must redirect invalid
+            resp = self.client.get(f'/payment/order/{order_id}', follow_redirects=False)
+            self.assertIn(resp.status_code, (301, 302))
+            self.assertIn('/payments?pay=invalid', resp.headers.get('Location', ''))
+
+            # Customer B attempts to cancel Customer A's order
+            self.client.post('/cancel_order', data={'order_id': order_id}, follow_redirects=False)
+            check_order = conn.execute("SELECT status FROM orders WHERE id=?", (order_id,)).fetchone()
+            self.assertNotEqual(check_order['status'], 'Cancelled')
+            self.client.get('/logout')
+
 
 if __name__ == '__main__':
     unittest.main()

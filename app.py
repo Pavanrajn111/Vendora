@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, abort
+from functools import wraps
 import sqlite3
 import os
 import re
@@ -696,6 +697,39 @@ def time_ago(dt_str):
         return "Just now"
 
 # ---------------------------------
+# AUTHENTICATION & ROLE DECORATORS
+# ---------------------------------
+
+def login_required(f):
+    """
+    Ensures user is authenticated in the current session.
+    Redirects unauthenticated visitors to /login.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def role_required(*roles):
+    """
+    Ensures authenticated user possesses one of the specified roles.
+    Redirects unauthenticated or unauthorized visitors to /login.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'user' not in session:
+                return redirect('/login')
+            if session.get('role') not in roles:
+                return redirect('/login')
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+# ---------------------------------
 # LANDING PAGE
 # ---------------------------------
 
@@ -708,10 +742,8 @@ def index():
 # ---------------------------------
 
 @app.route('/settings', methods=['GET', 'POST'])
+@login_required
 def settings():
-    if 'user' not in session:
-        return redirect('/login')
-        
     conn = get_db()
     error = ""
     success = ""
@@ -867,11 +899,8 @@ def register():
 # ---------------------------------
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
-
-    if 'user' not in session:
-        return redirect('/login')
-
     return render_template('dashboard.html')
 
 # ---------------------------------
@@ -879,11 +908,8 @@ def dashboard():
 # ---------------------------------
 
 @app.route('/profile')
+@login_required
 def profile():
-
-    if 'user' not in session:
-        return redirect('/login')
-
     conn = get_db()
 
     role = session['role']
@@ -958,11 +984,8 @@ def profile():
 # ---------------------------------
 
 @app.route('/vendors')
+@login_required
 def vendors():
-
-    if 'user' not in session:
-        return redirect('/login')
-
     conn = get_db()
 
     vendors = conn.execute(
@@ -985,11 +1008,8 @@ def vendors():
     )
 
 @app.route('/products', methods=['GET', 'POST'])
+@login_required
 def products():
-
-    if 'user' not in session:
-        return redirect('/login')
-
     conn = get_db()
 
     role = session['role']
@@ -1079,10 +1099,9 @@ def products():
         )
 
 @app.route('/edit_product/<int:id>', methods=['POST'])
+@login_required
+@role_required('vendor')
 def edit_product(id):
-    if 'user' not in session or session.get('role') != 'vendor':
-        return redirect('/login')
-
     conn = get_db()
     # Enforce vendor multi-tenant isolation
     prod = conn.execute("SELECT * FROM products WHERE id=? AND vendor=?", (id, session['user'])).fetchone()
@@ -1120,10 +1139,9 @@ def edit_product(id):
     return redirect('/products')
 
 @app.route('/delete_product/<int:id>', methods=['POST'])
+@login_required
+@role_required('vendor')
 def delete_product(id):
-    if 'user' not in session or session.get('role') != 'vendor':
-        return redirect('/login')
-
     conn = get_db()
     # Enforce multi-tenant isolation: only the owning vendor can delete this product
     conn.execute("DELETE FROM products WHERE id=? AND vendor=?", (id, session['user']))
@@ -1131,11 +1149,8 @@ def delete_product(id):
     return redirect('/products')
 
 @app.route('/orders')
+@login_required
 def orders():
-
-    if 'user' not in session:
-        return redirect('/login')
-
     conn = get_db()
 
     role = session['role']
@@ -1171,11 +1186,8 @@ def orders():
 # ---------------------------------
 
 @app.route('/delivery')
+@login_required
 def delivery():
-
-    if 'user' not in session:
-        return redirect('/login')
-
     conn = get_db()
 
     if session['role'] == 'vendor':
@@ -1201,9 +1213,9 @@ def delivery():
 # ---------------------------------
 
 @app.route('/payment/order/<int:order_id>')
+@login_required
+@role_required('customer')
 def payment_checkout(order_id):
-    if 'user' not in session or session.get('role') != 'customer':
-        return redirect('/login')
     conn = get_db()
     o, state = _payment_order_state(conn, order_id, session['user'])
     if state == 'invalid':
@@ -1216,9 +1228,9 @@ def payment_checkout(order_id):
 
 
 @app.route('/payment/order/<int:order_id>/card', methods=['GET', 'POST'])
+@login_required
+@role_required('customer')
 def payment_card(order_id):
-    if 'user' not in session or session.get('role') != 'customer':
-        return redirect('/login')
     conn = get_db()
     o, state = _payment_order_state(conn, order_id, session['user'])
     if state not in ('new', 'retry'):
@@ -1259,9 +1271,9 @@ def payment_card(order_id):
 
 
 @app.route('/payment/order/<int:order_id>/upi')
+@login_required
+@role_required('customer')
 def payment_upi_platforms(order_id):
-    if 'user' not in session or session.get('role') != 'customer':
-        return redirect('/login')
     conn = get_db()
     o, state = _payment_order_state(conn, order_id, session['user'])
     if state not in ('new', 'retry'):
@@ -1270,9 +1282,9 @@ def payment_upi_platforms(order_id):
 
 
 @app.route('/payment/order/<int:order_id>/upi/<platform>')
+@login_required
+@role_required('customer')
 def payment_upi_flow(order_id, platform):
-    if 'user' not in session or session.get('role') != 'customer':
-        return redirect('/login')
     if platform not in UPI_PLATFORM_SLUGS:
         return redirect('/payments?pay=invalid')
     conn = get_db()
@@ -1289,9 +1301,9 @@ def payment_upi_flow(order_id, platform):
 
 
 @app.route('/payment/order/<int:order_id>/upi/<platform>/qr', methods=['GET', 'POST'])
+@login_required
+@role_required('customer')
 def payment_upi_qr(order_id, platform):
-    if 'user' not in session or session.get('role') != 'customer':
-        return redirect('/login')
     if platform not in UPI_PLATFORM_SLUGS:
         return redirect('/payments?pay=invalid')
     conn = get_db()
@@ -1334,9 +1346,9 @@ def payment_upi_qr(order_id, platform):
 
 
 @app.route('/payment/order/<int:order_id>/upi/<platform>/upi-id', methods=['GET', 'POST'])
+@login_required
+@role_required('customer')
 def payment_upi_id(order_id, platform):
-    if 'user' not in session or session.get('role') != 'customer':
-        return redirect('/login')
     if platform not in UPI_PLATFORM_SLUGS:
         return redirect('/payments?pay=invalid')
     conn = get_db()
@@ -1382,11 +1394,8 @@ def payment_upi_id(order_id, platform):
 
 
 @app.route('/payments', methods=['GET'])
+@login_required
 def payments():
-
-    if 'user' not in session:
-        return redirect('/login')
-
     conn = get_db()
 
     # CUSTOMER VIEW
@@ -1435,11 +1444,9 @@ def payments():
 
 
 @app.route('/update_payment', methods=['POST'])
+@login_required
+@role_required('vendor')
 def update_payment():
-
-    if 'user' not in session or session.get('role') != 'vendor':
-        return redirect('/login')
-
     payment_id = request.form['payment_id']
     status = request.form['status']
     conn = get_db()
@@ -1487,10 +1494,9 @@ def update_payment():
 
 
 @app.route('/process_refund', methods=['POST'])
+@login_required
+@role_required('vendor')
 def process_refund():
-    if 'user' not in session or session.get('role') != 'vendor':
-        return redirect('/login')
-        
     payment_id = request.form['payment_id']
     conn = get_db()
     ts = datetime.now().strftime('%d/%m/%Y, %I:%M %p')
@@ -1505,11 +1511,8 @@ def process_refund():
 # ---------------------------------
 
 @app.route('/reviews', methods=['GET', 'POST'])
+@login_required
 def reviews():
-
-    if 'user' not in session:
-        return redirect('/login')
-
     conn = get_db()
 
     role = session['role']
@@ -1585,11 +1588,8 @@ def reviews():
 # ---------------------------------
 
 @app.route('/select_vendor', methods=['POST'])
+@login_required
 def select_vendor():
-
-    if 'user' not in session:
-        return redirect('/login')
-
     customer = session['user']
 
     vendor = request.form['vendor']
@@ -1613,11 +1613,9 @@ def select_vendor():
     return redirect('/vendors')
 
 @app.route('/add_order', methods=['POST'])
+@login_required
+@role_required('customer')
 def add_order():
-
-    if 'user' not in session or session.get('role') != 'customer':
-        return redirect('/login')
-
     product_id = request.form.get('product_id')
     if not product_id:
         return redirect('/products')
@@ -1664,10 +1662,9 @@ def add_order():
     return redirect('/orders')
 
 @app.route('/update_order', methods=['POST'])
+@login_required
+@role_required('vendor')
 def update_order():
-    if 'user' not in session or session.get('role') != 'vendor':
-        return redirect('/login')
-
     order_id = request.form.get('order_id')
     status = request.form.get('status')
     expected_delivery = request.form.get('expected_delivery', '')
@@ -1745,10 +1742,8 @@ def update_order():
 
 
 @app.route('/cancel_order', methods=['POST'])
+@login_required
 def cancel_order():
-    if 'user' not in session:
-        return redirect('/login')
-
     order_id = request.form['order_id']
     conn = get_db()
     
@@ -1772,11 +1767,8 @@ def cancel_order():
 # ---------------------------------
 
 @app.route('/vendor_products/<vendor_name>')
+@login_required
 def vendor_products(vendor_name):
-
-    if 'user' not in session:
-        return redirect('/login')
-
     conn = get_db()
 
     # CHECK CONNECTION
@@ -1816,11 +1808,8 @@ def vendor_products(vendor_name):
 # ---------------------------------
 
 @app.route('/vendor_reviews/<vendor_name>')
+@login_required
 def vendor_reviews(vendor_name):
-
-    if 'user' not in session:
-        return redirect('/login')
-
     conn = get_db()
 
     reviews = conn.execute(
