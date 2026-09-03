@@ -16,12 +16,12 @@
         <span class="bg-clip-text text-transparent bg-gradient-to-r from-red-400 via-orange-500 to-yellow-500 tracking-tight">Vendora</span>
     </a>
 
-    <!-- Desktop Anchor Links -->
-    <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-muted">
-        <a href="#highlights" class="hover:text-orange-400 transition-colors">Platform Highlights</a>
-        <a href="#how-it-works" class="hover:text-orange-400 transition-colors">How It Works</a>
-        <a href="#showcase" class="hover:text-orange-400 transition-colors">Catalogue Preview</a>
-        <a href="#security" class="hover:text-orange-400 transition-colors">Enterprise Security</a>
+    <!-- Desktop Anchor Links (Matching original & login/register navigation) -->
+    <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-muted">
+        <a href="#hero" class="hover:text-orange-400 transition-colors">Home</a>
+        <a href="#about" class="hover:text-orange-400 transition-colors">About Us</a>
+        <a href="#services" class="hover:text-orange-400 transition-colors">Services</a>
+        <a href="#contact" class="hover:text-orange-400 transition-colors">Contact</a>
     </nav>
 
     <!-- Auth Actions & Theme Toggle -->
@@ -40,8 +40,8 @@
                 <span class="hidden sm:inline">Logout</span>
             </a>
         {% else %}
-            <a href="/login" class="px-4 py-2 rounded-xl text-sm font-semibold glass-panel hover:bg-white/10 text-main transition-colors">Sign In</a>
-            <a href="/register" class="btn-glow px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-md shadow-orange-500/20">Get Started</a>
+            <a href="/login" class="px-5 py-2 rounded-lg glass-panel hover:bg-white/10 text-main transition-colors font-medium">Login</a>
+            <a href="/register" class="px-5 py-2 rounded-lg btn-glow text-white font-medium">Register</a>
         {% endif %}
     </div>
 </header>
@@ -50,6 +50,7 @@
      HERO SECTION WITH 3D MARKETPLACE CENTERPIECE
      ========================================================================= -->
 <section id="hero" class="relative pt-6 pb-20 lg:py-24 overflow-visible">
+    <div id="home" class="absolute -top-24"></div>
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
         
         <!-- Left: Branding, Value Proposition & CTAs -->
@@ -304,7 +305,8 @@
 <!-- =========================================================================
      MARKETPLACE HIGHLIGHTS
      ========================================================================= -->
-<section id="highlights" class="py-16 reveal-on-scroll">
+<section id="highlights" class="py-16 reveal-on-scroll relative">
+    <div id="services" class="absolute -top-24"></div>
     <div class="text-center max-w-3xl mx-auto mb-14">
         <span class="text-xs font-bold uppercase tracking-wider text-orange-400 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/30">
             Platform Capabilities
@@ -387,7 +389,8 @@
 <!-- =========================================================================
      HOW VENDORA WORKS (3-STEP WORKFLOW)
      ========================================================================= -->
-<section id="how-it-works" class="py-16 reveal-on-scroll">
+<section id="how-it-works" class="py-16 reveal-on-scroll relative">
+    <div id="about" class="absolute -top-24"></div>
     <div class="glass-panel p-8 sm:p-12 lg:p-16 rounded-3xl border border-glass relative overflow-hidden">
         
         <div class="text-center max-w-2xl mx-auto mb-14">

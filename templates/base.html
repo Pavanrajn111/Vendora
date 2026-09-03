@@ -41,61 +41,116 @@
     <div class="bg-shape bg-shape-1"></div>
     <div class="bg-shape bg-shape-2"></div>
 
-    <!-- Main Navigation for Dashboard (Not displayed on landing page to avoid duplicate navbar) -->
+    <!-- Main Navigation for Dashboard & Authenticated Pages -->
     {% if session.get('user') and request.path != '/' %}
-    <nav class="glass-panel sticky top-0 z-50 px-6 py-4 flex justify-between items-center mb-8">
-        <div class="flex items-center gap-4">
-            <button id="mobile-menu-btn" class="md:hidden text-2xl text-main hover:text-orange-400 transition-colors">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <a href="/dashboard" class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-orange-500">
-                <i class="fa-solid fa-store mr-2"></i>Vendora
-            </a>
-        </div>
+    <header class="sticky top-4 z-50 px-4 mb-8">
+        <nav class="glass-panel max-w-7xl mx-auto px-5 py-3 rounded-2xl border border-glass shadow-xl backdrop-blur-xl flex justify-between items-center">
+            
+            <!-- Left: Brand Logo & Mobile Menu Toggle -->
+            <div class="flex items-center gap-3">
+                <button id="mobile-menu-btn" class="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl glass-panel text-main hover:text-orange-400 transition-colors" title="Toggle Navigation Menu">
+                    <i class="fa-solid fa-bars text-sm"></i>
+                </button>
+                <a href="/dashboard" class="flex items-center gap-2.5 group">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-red-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-store text-sm"></i>
+                    </div>
+                    <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 via-orange-500 to-yellow-500 tracking-tight">Vendora</span>
+                </a>
+            </div>
 
-        <!-- Desktop Menu -->
-        <div class="hidden md:flex items-center gap-6">
-            {% if session['role'] == 'customer' %}
-                <a href="/vendors" class="hover:text-orange-400 transition-colors"><i class="fa-solid fa-building mr-2"></i>Vendors</a>
-            {% endif %}
-            <a href="/products" class="hover:text-orange-400 transition-colors"><i class="fa-solid fa-box mr-2"></i>Products</a>
-            <a href="/orders" class="hover:text-orange-400 transition-colors"><i class="fa-solid fa-cart-shopping mr-2"></i>Orders</a>
-            <a href="/delivery" class="hover:text-orange-400 transition-colors"><i class="fa-solid fa-truck mr-2"></i>Delivery</a>
-            <a href="/payments" class="hover:text-orange-400 transition-colors"><i class="fa-solid fa-credit-card mr-2"></i>Payments</a>
-            <a href="/reviews" class="hover:text-orange-400 transition-colors"><i class="fa-solid fa-star mr-2"></i>Reviews</a>
-        </div>
+            <!-- Center: Navigation Tabs (Segmented Control with Active Route Highlights) -->
+            <div class="hidden lg:flex items-center gap-1.5 p-1 rounded-xl glass-panel border border-glass/60 text-xs font-medium">
+                <a href="/dashboard" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all {% if request.path == '/dashboard' %}bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm shadow-orange-500/30{% else %}text-muted hover:text-main hover:bg-white/5{% endif %}">
+                    <i class="fa-solid fa-gauge text-xs"></i>
+                    <span>Dashboard</span>
+                </a>
+                {% if session['role'] == 'customer' %}
+                    <a href="/vendors" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all {% if request.path == '/vendors' %}bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm shadow-orange-500/30{% else %}text-muted hover:text-main hover:bg-white/5{% endif %}">
+                        <i class="fa-solid fa-building text-xs"></i>
+                        <span>Vendors</span>
+                    </a>
+                {% endif %}
+                <a href="/products" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all {% if request.path.startswith('/products') or request.path.startswith('/edit_product') %}bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm shadow-orange-500/30{% else %}text-muted hover:text-main hover:bg-white/5{% endif %}">
+                    <i class="fa-solid fa-box text-xs"></i>
+                    <span>Products</span>
+                </a>
+                <a href="/orders" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all {% if request.path == '/orders' %}bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm shadow-orange-500/30{% else %}text-muted hover:text-main hover:bg-white/5{% endif %}">
+                    <i class="fa-solid fa-cart-shopping text-xs"></i>
+                    <span>Orders</span>
+                </a>
+                <a href="/delivery" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all {% if request.path == '/delivery' %}bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm shadow-orange-500/30{% else %}text-muted hover:text-main hover:bg-white/5{% endif %}">
+                    <i class="fa-solid fa-truck text-xs"></i>
+                    <span>Delivery</span>
+                </a>
+                <a href="/payments" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all {% if request.path.startswith('/payments') or request.path.startswith('/payment/') %}bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm shadow-orange-500/30{% else %}text-muted hover:text-main hover:bg-white/5{% endif %}">
+                    <i class="fa-solid fa-credit-card text-xs"></i>
+                    <span>Payments</span>
+                </a>
+                <a href="/reviews" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all {% if request.path.startswith('/reviews') or request.path.startswith('/vendor_reviews') %}bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm shadow-orange-500/30{% else %}text-muted hover:text-main hover:bg-white/5{% endif %}">
+                    <i class="fa-solid fa-star text-xs"></i>
+                    <span>Reviews</span>
+                </a>
+            </div>
 
-        <div class="flex items-center gap-4">
-            <button id="theme-toggle" class="text-xl text-muted hover:text-orange-400 transition-colors w-8 h-8 flex items-center justify-center rounded-full glass-panel" title="Toggle Theme">
-                <i class="fa-solid fa-moon dark-icon"></i>
-                <i class="fa-solid fa-sun light-icon hidden"></i>
-            </button>
-            <a href="/profile" class="flex items-center gap-2 hover:text-orange-400 transition-colors">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-red-500 to-orange-500 flex items-center justify-center text-white font-bold">
-                    {{ session['user'][0]|upper }}
-                </div>
-                <span class="hidden sm:inline text-main">{{ session['user'] }}</span>
-            </a>
-            <a href="/settings" class="flex items-center gap-2 text-muted hover:text-orange-400 transition-colors ml-2 font-medium"><i class="fa-solid fa-gear"></i><span class="hidden sm:inline">Settings</span></a>
-            <a href="/logout" class="text-red-400 hover:text-red-300 transition-colors ml-3" title="Logout"><i class="fa-solid fa-right-from-bracket text-lg"></i></a>
-        </div>
-    </nav>
+            <!-- Right: Theme, Settings, User Profile Pill & Logout -->
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                <button id="theme-toggle" class="w-9 h-9 flex items-center justify-center rounded-xl glass-panel text-muted hover:text-orange-400 transition-colors cursor-pointer" title="Toggle Light/Dark Theme">
+                    <i class="fa-solid fa-moon dark-icon"></i>
+                    <i class="fa-solid fa-sun light-icon hidden"></i>
+                </button>
+                <a href="/settings" class="w-9 h-9 flex items-center justify-center rounded-xl glass-panel text-muted hover:text-orange-400 transition-colors {% if request.path == '/settings' %}border-orange-500/40 text-orange-400{% endif %}" title="Account Settings">
+                    <i class="fa-solid fa-gear text-sm"></i>
+                </a>
+                <a href="/profile" class="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl glass-panel hover:border-orange-500/40 transition-all group {% if request.path == '/profile' %}border-orange-500/40{% endif %}" title="View Profile">
+                    <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-red-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                        {{ session['user'][0]|upper }}
+                    </div>
+                    <span class="text-xs font-medium text-main group-hover:text-orange-400 transition-colors max-w-[100px] sm:max-w-[140px] truncate">{{ session['user'] }}</span>
+                </a>
+                <a href="/logout" class="w-9 h-9 flex items-center justify-center rounded-xl glass-panel hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-all cursor-pointer" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                </a>
+            </div>
+
+        </nav>
+    </header>
 
     <!-- Mobile Menu Overlay -->
-    <div id="mobile-menu" class="fixed inset-0 bg-overlay/95 backdrop-blur-md z-40 hidden flex-col pt-20 px-6 gap-6">
-        <button id="close-menu-btn" class="absolute top-6 right-6 text-2xl text-main hover:text-orange-400">
+    <div id="mobile-menu" class="fixed inset-0 bg-overlay/95 backdrop-blur-md z-50 hidden flex-col pt-20 px-6 gap-3">
+        <button id="close-menu-btn" class="absolute top-6 right-6 w-9 h-9 flex items-center justify-center rounded-xl glass-panel text-main hover:text-orange-400">
             <i class="fa-solid fa-xmark"></i>
         </button>
         
+        <a href="/dashboard" class="px-4 py-3 rounded-xl flex items-center gap-3 text-base {% if request.path == '/dashboard' %}bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30{% else %}text-muted hover:text-main glass-panel{% endif %}">
+            <i class="fa-solid fa-gauge w-6 text-center"></i><span>Dashboard</span>
+        </a>
         {% if session['role'] == 'customer' %}
-            <a href="/vendors" class="text-xl hover:text-orange-400 transition-colors border-b border-slate-700 pb-2"><i class="fa-solid fa-building w-8"></i>Vendors</a>
+            <a href="/vendors" class="px-4 py-3 rounded-xl flex items-center gap-3 text-base {% if request.path == '/vendors' %}bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30{% else %}text-muted hover:text-main glass-panel{% endif %}">
+                <i class="fa-solid fa-building w-6 text-center"></i><span>Vendors</span>
+            </a>
         {% endif %}
-        <a href="/products" class="text-xl hover:text-orange-400 transition-colors border-b border-slate-700 pb-2"><i class="fa-solid fa-box w-8"></i>Products</a>
-        <a href="/orders" class="text-xl hover:text-orange-400 transition-colors border-b border-slate-700 pb-2"><i class="fa-solid fa-cart-shopping w-8"></i>Orders</a>
-        <a href="/delivery" class="text-xl hover:text-orange-400 transition-colors border-b border-slate-700 pb-2"><i class="fa-solid fa-truck w-8"></i>Delivery</a>
-        <a href="/payments" class="text-xl hover:text-orange-400 transition-colors border-b border-slate-700 pb-2"><i class="fa-solid fa-credit-card w-8"></i>Payments</a>
-        <a href="/reviews" class="text-xl hover:text-orange-400 transition-colors border-b border-slate-700 pb-2"><i class="fa-solid fa-star w-8"></i>Reviews</a>
-        <a href="/settings" class="text-xl hover:text-orange-400 transition-colors border-b border-slate-700 pb-2"><i class="fa-solid fa-gear w-8"></i>Settings</a>
+        <a href="/products" class="px-4 py-3 rounded-xl flex items-center gap-3 text-base {% if request.path.startswith('/products') %}bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30{% else %}text-muted hover:text-main glass-panel{% endif %}">
+            <i class="fa-solid fa-box w-6 text-center"></i><span>Products</span>
+        </a>
+        <a href="/orders" class="px-4 py-3 rounded-xl flex items-center gap-3 text-base {% if request.path == '/orders' %}bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30{% else %}text-muted hover:text-main glass-panel{% endif %}">
+            <i class="fa-solid fa-cart-shopping w-6 text-center"></i><span>Orders</span>
+        </a>
+        <a href="/delivery" class="px-4 py-3 rounded-xl flex items-center gap-3 text-base {% if request.path == '/delivery' %}bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30{% else %}text-muted hover:text-main glass-panel{% endif %}">
+            <i class="fa-solid fa-truck w-6 text-center"></i><span>Delivery</span>
+        </a>
+        <a href="/payments" class="px-4 py-3 rounded-xl flex items-center gap-3 text-base {% if request.path.startswith('/payments') %}bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30{% else %}text-muted hover:text-main glass-panel{% endif %}">
+            <i class="fa-solid fa-credit-card w-6 text-center"></i><span>Payments</span>
+        </a>
+        <a href="/reviews" class="px-4 py-3 rounded-xl flex items-center gap-3 text-base {% if request.path.startswith('/reviews') %}bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30{% else %}text-muted hover:text-main glass-panel{% endif %}">
+            <i class="fa-solid fa-star w-6 text-center"></i><span>Reviews</span>
+        </a>
+        <a href="/settings" class="px-4 py-3 rounded-xl flex items-center gap-3 text-base {% if request.path == '/settings' %}bg-orange-500/20 text-orange-400 font-semibold border border-orange-500/30{% else %}text-muted hover:text-main glass-panel{% endif %}">
+            <i class="fa-solid fa-gear w-6 text-center"></i><span>Settings</span>
+        </a>
+        <a href="/logout" class="px-4 py-3 rounded-xl flex items-center gap-3 text-base text-red-400 hover:bg-red-500/20 glass-panel border border-red-500/30 mt-2">
+            <i class="fa-solid fa-right-from-bracket w-6 text-center"></i><span>Logout</span>
+        </a>
     </div>
     {% endif %}
 
@@ -120,7 +175,7 @@
     {% endif %}
 
     <!-- Platform Footer -->
-    <footer class="glass-panel mt-auto py-12 border-t border-glass">
+    <footer id="contact" class="glass-panel mt-auto py-12 border-t border-glass">
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                 <!-- Col 1: Platform Overview -->

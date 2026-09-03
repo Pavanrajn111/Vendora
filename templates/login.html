@@ -5,9 +5,12 @@
 {% block content %}
 <!-- Top Navigation Bar -->
 <nav class="glass-panel sticky top-0 z-50 px-6 py-4 flex justify-between items-center mb-12 -mx-4 sm:mx-0 sm:rounded-b-2xl">
-    <div class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-orange-500">
-        <i class="fa-solid fa-store mr-2"></i>Vendora
-    </div>
+    <a href="/" class="flex items-center gap-2.5 text-2xl font-bold text-main group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/25 group-hover:scale-105 transition-transform">
+            <i class="fa-solid fa-store text-lg"></i>
+        </div>
+        <span class="bg-clip-text text-transparent bg-gradient-to-r from-red-400 via-orange-500 to-yellow-500 tracking-tight">Vendora</span>
+    </a>
     <div class="hidden md:flex gap-6 items-center">
         <a href="/" class="hover:text-orange-400 transition-colors">Home</a>
         <a href="/#about" class="hover:text-orange-400 transition-colors">About Us</a>
