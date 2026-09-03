@@ -486,12 +486,17 @@ if not DB_PATH:
         # Copy the bundled SQLite database to /tmp where writes are permitted.
         DB_PATH = "/tmp/vendor.db"
         bundled_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor.db")
-        if not os.path.exists(DB_PATH) and os.path.exists(bundled_db):
-            import shutil
-            try:
-                shutil.copy2(bundled_db, DB_PATH)
-            except Exception:
-                pass
+        if not os.path.exists(DB_PATH):
+            if os.path.exists(bundled_db):
+                import shutil
+                try:
+                    shutil.copy2(bundled_db, DB_PATH)
+                except Exception as e:
+                    import sys
+                    print(f"[Vercel SQLite] Warning: Failed to copy bundled database to /tmp: {e}", file=sys.stderr)
+            else:
+                import sys
+                print(f"[Vercel SQLite] Notice: Bundled database not found at {bundled_db}. A fresh database will be created in /tmp.", file=sys.stderr)
     else:
         DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor.db")
 
