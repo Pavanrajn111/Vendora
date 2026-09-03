@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Vendora | {{ vendor_name }}'s Reviews{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="flex items-center gap-4 mb-8 border-b border-glass pb-4">
+        <a href="/vendors" class="text-muted hover:text-main transition-colors w-10 h-10 flex items-center justify-center rounded-full glass-panel">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="text-3xl font-bold">{{ vendor_name }}'s Reviews</h1>
+            <p class="text-muted mt-1">See what other customers are saying about this vendor.</p>
+        </div>
+    </div>
+
+    <!-- Reviews Grid -->
+    {% if reviews %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for r in reviews %}
+        <div class="glass-card p-6 relative overflow-hidden group">
+            
+            <div class="relative z-10 flex justify-between items-start mb-4 border-b border-glass pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-main">
+                        {{ r['customer'][0]|upper }}
+                    </div>
+                    <div class="font-bold text-main">{{ r['customer'] }}</div>
+                </div>
+                
+                <!-- Stars -->
+                <div class="flex text-sm bg-yellow-500/10 px-2 py-1 rounded-full border border-yellow-500/20">
+                    {% set rating = r['rating']|int %}
+                    {% for i in range(5) %}
+                        {% if i < rating %}
+                            <i class="fa-solid fa-star text-yellow-400"></i>
+                        {% else %}
+                            <i class="fa-solid fa-star text-muted"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <p class="relative z-10 text-main italic leading-relaxed text-sm mt-2">
+                "{{ r['comment'] }}"
+            </p>
+            <div class="relative z-10 mt-3 text-xs font-medium text-slate-500">
+                <i class="fa-regular fa-clock mr-1"></i> {{ r['created_at']|time_ago }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="glass-panel p-12 text-center rounded-2xl">
+        <div class="text-5xl text-muted mb-4"><i class="fa-regular fa-star-half-stroke"></i></div>
+        <h3 class="text-xl font-bold mb-2">No Reviews Yet</h3>
+        <p class="text-muted">This vendor hasn't received any feedback yet. Be the first to review them!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Vendora | Vendor Profile{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-4xl mx-auto">
+    <!-- Profile Header -->
+    <div class="glass-panel rounded-3xl p-8 mb-8 relative overflow-hidden">
+        <div class="absolute -right-20 -top-20 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl z-0"></div>
+        <div class="absolute -left-20 -bottom-20 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl z-0"></div>
+        
+        <div class="relative z-10 flex flex-col sm:flex-row items-center gap-6">
+            <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-pink-500 to-orange-500 flex items-center justify-center text-4xl font-bold text-white shadow-xl ring-4 ring-white/20">
+                <i class="fa-solid fa-store"></i>
+            </div>
+            <div class="text-center sm:text-left">
+                <h1 class="text-3xl font-bold text-main mb-1">{{ session['user'] }}</h1>
+                <div class="text-pink-500 font-semibold uppercase tracking-widest text-sm flex items-center justify-center sm:justify-start gap-2">
+                    <i class="fa-solid fa-certificate"></i> Verified Vendor
+                </div>
+            </div>
+            <div class="sm:ml-auto">
+                <a href="/logout" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 px-5 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-main"><i class="fa-solid fa-chart-line text-pink-500"></i> Business Performance</h2>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="glass-card p-6 border-t-2 border-t-blue-500 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 text-6xl text-blue-500/10 group-hover:scale-110 transition-transform"><i class="fa-solid fa-users"></i></div>
+            <div class="text-sm text-muted font-medium mb-1">Customers</div>
+            <div class="text-3xl font-bold text-main">{{ total_customers }}</div>
+        </div>
+        
+        <div class="glass-card p-6 border-t-2 border-t-orange-500 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 text-6xl text-orange-500/10 group-hover:scale-110 transition-transform"><i class="fa-solid fa-box-open"></i></div>
+            <div class="text-sm text-muted font-medium mb-1">Total Orders</div>
+            <div class="text-3xl font-bold text-main">{{ total_orders }}</div>
+        </div>
+        
+        <div class="glass-card p-6 border-t-2 border-t-yellow-500 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 text-6xl text-yellow-500/10 group-hover:scale-110 transition-transform"><i class="fa-solid fa-star"></i></div>
+            <div class="text-sm text-muted font-medium mb-1">Total Reviews</div>
+            <div class="text-3xl font-bold text-main">{{ total_reviews }}</div>
+        </div>
+    </div>
+
+    <!-- Connected Customers List -->
+    <div class="glass-panel rounded-2xl p-6">
+        <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-main"><i class="fa-solid fa-address-book text-blue-500"></i> Customer Directory</h3>
+        
+        {% if connected_customers %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {% for c in connected_customers %}
+            <div class="flex items-center gap-3.5 p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
+                <div class="w-11 h-11 rounded-full bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-base shrink-0 border border-blue-100 dark:border-blue-500/30">
+                    {{ c['customer'][0]|upper }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold text-base text-slate-900 dark:text-white truncate">
+                        {{ c['customer'] }}
+                    </div>
+                    <div class="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Active Customer
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center p-8 glass-card border border-glass">
+            <p class="text-muted">You don't have any connected customers yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}Vendora | Payments{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="flex justify-between items-center mb-8 border-b border-glass pb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-main">Payments</h1>
+            <p class="text-muted mt-1">Manage transactions and payment statuses securely.</p>
+        </div>
+    </div>
+
+    {% if pay_notice and session['role'] == 'customer' %}
+    <div class="mb-6 rounded-xl border px-4 py-3 text-sm {% if pay_notice == 'success' %}border-green-500/40 bg-green-500/10 text-green-400{% elif pay_notice == 'invalid' %}border-red-500/40 bg-red-500/10 text-red-400{% else %}border-amber-500/40 bg-amber-500/10 text-amber-200{% endif %}">
+        {% if pay_notice == 'success' %}
+        <i class="fa-solid fa-circle-check mr-2"></i>Payment submitted. Status: <strong>Pending Vendor Verification</strong>.
+        {% elif pay_notice == 'invalid' %}
+        <i class="fa-solid fa-circle-exclamation mr-2"></i>This order is not available for payment.
+        {% elif pay_notice == 'done' %}
+        <i class="fa-solid fa-circle-info mr-2"></i>This order is already paid or closed.
+        {% elif pay_notice == 'pending' %}
+        <i class="fa-solid fa-hourglass-half mr-2"></i>A payment is already awaiting vendor verification.
+        {% else %}
+        <i class="fa-solid fa-circle-info mr-2"></i>Please review your payments.
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if session['role'] == 'customer' %}
+    <div class="mb-10">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-main"><i class="fa-solid fa-file-invoice-dollar text-orange-400"></i> Pending Payments</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% set pending_found = namespace(value=false) %}
+            
+            {% for o in orders %}
+                {% set pay = namespace(exists=false, verified=false, not_received=false) %}
+                {% for p in payments %}
+                    {% if p['order_id']|string == o['id']|string %}
+                        {% set pay.exists = true %}
+                        {% if p['status'] == 'Payment Not Received' %}
+                            {% set pay.not_received = true %}
+                        {% endif %}
+                        {% if p['status'] in ['Accepted', 'Verified', 'Out Of Stock', 'Refund Completed'] %}
+                            {% set pay.verified = true %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if o['status'] == 'Pending' %}
+                    {% set pending_found.value = true %}
+                    <div class="glass-card p-5 relative overflow-hidden group border border-orange-500/20">
+                        <div class="absolute -right-4 -top-4 w-20 h-20 bg-orange-500/10 rounded-full blur-xl z-0"></div>
+                        
+                        <div class="relative z-10 flex justify-between items-start mb-4">
+                            <div>
+                                <div class="text-xs text-indigo-400 font-medium mb-1"><i class="fa-solid fa-store"></i> {{ o['vendor'] }}</div>
+                                <h3 class="font-bold text-main text-lg">{{ o['product_name'] }}</h3>
+                            </div>
+                            <div class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
+                                ₹{{ o['price'] }}
+                            </div>
+                        </div>
+                        
+                        <div class="relative z-10 pt-4 border-t border-glass mt-auto">
+                            <div class="w-full py-2.5 rounded-lg bg-orange-500/10 text-orange-500 border border-orange-500/30 font-medium text-center text-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-hourglass-half animate-pulse"></i> Pending Vendor Acceptance
+                            </div>
+                        </div>
+                    </div>
+                {% elif o['status'] == 'Accepted' and not pay.verified %}
+                    {% if pay.not_received %}
+                        {% set pending_found.value = true %}
+                        <div class="glass-card p-5 relative overflow-hidden group border border-red-500/25">
+                            <div class="absolute -right-4 -top-4 w-20 h-20 bg-red-500/10 rounded-full blur-xl z-0"></div>
+                            <div class="relative z-10 flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="text-xs text-indigo-400 font-medium mb-1"><i class="fa-solid fa-store"></i> {{ o['vendor'] }}</div>
+                                    <h3 class="font-bold text-main text-lg">{{ o['product_name'] }}</h3>
+                                </div>
+                                <div class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
+                                    ₹{{ o['price'] }}
+                                </div>
+                            </div>
+                            <div class="relative z-10 pt-4 border-t border-glass mt-auto space-y-3">
+                                <div class="w-full py-2.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/35 font-medium text-center text-sm leading-snug px-2">
+                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Payment Not Received By Vendor. Please Pay Again.
+                                </div>
+                                <a href="{{ url_for('payment_checkout', order_id=o['id']) }}" class="w-full py-2.5 rounded-lg font-medium border border-orange-500/40 bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 transition-colors flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-rotate-right"></i> Pay Again
+                                </a>
+                            </div>
+                        </div>
+                    {% elif not pay.exists %}
+                        {% set pending_found.value = true %}
+                        <div class="glass-card p-5 relative overflow-hidden group border border-orange-500/20">
+                            <div class="absolute -right-4 -top-4 w-20 h-20 bg-orange-500/10 rounded-full blur-xl z-0"></div>
+                            
+                            <div class="relative z-10 flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="text-xs text-indigo-400 font-medium mb-1"><i class="fa-solid fa-store"></i> {{ o['vendor'] }}</div>
+                                    <h3 class="font-bold text-main text-lg">{{ o['product_name'] }}</h3>
+                                </div>
+                                <div class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
+                                    ₹{{ o['price'] }}
+                                </div>
+                            </div>
+                            
+                            <div class="relative z-10 pt-4 border-t border-glass mt-auto">
+                                <div class="w-full py-1.5 mb-2 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 font-medium text-center text-xs">
+                                    Payment Requested
+                                </div>
+                                <a href="{{ url_for('payment_checkout', order_id=o['id']) }}" class="btn-glow w-full py-2.5 rounded-lg font-medium shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 transition-transform hover:scale-[1.01] active:scale-[0.99]">
+                                    <i class="fa-solid fa-credit-card"></i> Pay Now
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        {% set pending_found.value = true %}
+                        <div class="glass-card p-5 relative overflow-hidden group border border-orange-500/20">
+                            <div class="absolute -right-4 -top-4 w-20 h-20 bg-orange-500/10 rounded-full blur-xl z-0"></div>
+                            
+                            <div class="relative z-10 flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="text-xs text-indigo-400 font-medium mb-1"><i class="fa-solid fa-store"></i> {{ o['vendor'] }}</div>
+                                    <h3 class="font-bold text-main text-lg">{{ o['product_name'] }}</h3>
+                                </div>
+                                <div class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
+                                    ₹{{ o['price'] }}
+                                </div>
+                            </div>
+                            
+                            <div class="relative z-10 pt-4 border-t border-glass mt-auto">
+                                <div class="w-full py-2.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30 font-medium text-center text-sm flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-hourglass-half animate-pulse"></i> Pending Vendor Verification
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if not pending_found.value %}
+                <div class="col-span-full glass-panel p-8 text-center rounded-xl text-muted">
+                    <i class="fa-solid fa-circle-check text-3xl mb-2 text-green-400"></i>
+                    <p>All set! You have no pending payments.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Payment History -->
+    <div>
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-main"><i class="fa-solid fa-clock-rotate-left text-indigo-400"></i> Payment History</h2>
+        
+        {% if payments %}
+        <div class="glass-card overflow-hidden rounded-xl border border-glass">
+            <div class="hidden md:block overflow-x-auto">
+                {% if session['role'] == 'customer' %}
+                <table class="w-full text-left payment-history-table">
+                    <thead>
+                        <tr>
+                            <th class="align-middle">Product</th>
+                            <th class="align-middle">Vendor</th>
+                            <th class="align-middle text-right">Amount paid (₹)</th>
+                            <th class="align-middle">Payment status</th>
+                            <th class="align-middle">Delivery status</th>
+                            <th class="align-middle min-w-[9.5rem]">Payment date &amp; time</th>
+                            <th class="align-middle min-w-[11rem]">Payment method</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-glass border-t border-glass">
+                        {% for p in payments %}
+                        {% set del_stat = p['delivery_status'] or 'Pending' %}
+                        {% set pm_raw = (p['payment_method']|default('', true))|lower %}
+                        <tr class="hover:bg-overlay/80 transition-colors">
+                            <td class="font-semibold text-main">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    {% if p['product_image'] %}
+                                    <img src="{{ url_for('static', filename=p['product_image']|resolve_image) }}" alt="" class="w-11 h-11 shrink-0 rounded-lg object-contain bg-slate-700/30 border border-glass">
+                                    {% else %}
+                                    <div class="w-11 h-11 shrink-0 rounded-lg bg-overlay flex items-center justify-center text-muted/50 border border-glass"><i class="fa-solid fa-box-open"></i></div>
+                                    {% endif %}
+                                    <span class="truncate">{{ p['product_name'] }}</span>
+                                </div>
+                            </td>
+                            <td class="font-medium text-muted">{{ p['vendor'] }}</td>
+                            <td class="font-bold text-main whitespace-nowrap text-right">₹{{ p['amount'] }}</td>
+                            <td>
+                                {% if p['status'] == 'Accepted' %}
+                                    <span class="badge badge-accepted"><i class="fa-solid fa-circle-check"></i> Payment Verified Successfully</span>
+                                {% elif p['status'] in ['Completed', 'Pending Vendor Verification'] %}
+                                    <span class="badge badge-pending"><i class="fa-solid fa-hourglass-half"></i> Pending Verification</span>
+                                {% elif p['status'] == 'Payment Not Received' %}
+                                    <span class="badge badge-outofstock"><i class="fa-solid fa-triangle-exclamation"></i> Payment Not Received</span>
+                                {% elif p['status'] == 'Out Of Stock' %}
+                                    <span class="badge badge-outofstock"><i class="fa-solid fa-xmark"></i> Out Of Stock</span>
+                                {% elif p['status'] == 'Refund Pending' %}
+                                    <span class="badge badge-pending"><i class="fa-solid fa-clock-rotate-left"></i> Refund Pending</span>
+                                {% elif p['status'] == 'Refund Completed' %}
+                                    <span class="badge badge-delivered"><i class="fa-solid fa-money-bill-transfer"></i> Refund Completed</span>
+                                {% else %}
+                                    <span class="badge badge-pending"><i class="fa-solid fa-hourglass-half"></i> {{ p['status'] }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if del_stat == 'Pending' %}badge-pending
+                                    {% elif del_stat == 'Accepted' %}badge-accepted
+                                    {% elif del_stat == 'Processing' %}badge-processing
+                                    {% elif del_stat == 'Shipped' %}badge-shipped
+                                    {% elif del_stat == 'Out For Delivery' %}badge-outfordelivery
+                                    {% elif del_stat == 'Delivered' %}badge-delivered
+                                    {% else %}badge-outofstock{% endif %} text-[10px] px-2 py-0.5">
+                                    {{ del_stat }}
+                                </span>
+                            </td>
+                            <td class="text-sm text-muted whitespace-nowrap"><i class="fa-regular fa-calendar mr-1"></i>{{ p['payment_date']|indian_date }}</td>
+                            <td>
+                                {% if pm_raw == 'upi' %}
+                                <span class="badge badge-pay-upi inline-flex items-start gap-2"><i class="fa-solid fa-mobile-screen mt-0.5"></i><span>{{ p['payment_method']|payment_method_label }}</span></span>
+                                {% elif pm_raw == 'card' %}
+                                <span class="badge badge-pay-card inline-flex items-start gap-2"><i class="fa-regular fa-credit-card mt-0.5"></i><span>{{ p['payment_method']|payment_method_label }}</span></span>
+                                {% else %}
+                                <span class="badge badge-pay-legacy inline-flex items-start gap-2"><i class="fa-solid fa-clock-rotate-left mt-0.5"></i><span>{{ p['payment_method']|payment_method_label }}</span></span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <table class="w-full text-left payment-history-table">
+                    <thead>
+                        <tr>
+                            <th class="align-middle">Product</th>
+                            <th class="align-middle">Customer</th>
+                            <th class="align-middle text-right">Amount received (₹)</th>
+                            <th class="align-middle">Payment status</th>
+                            <th class="align-middle">Delivery status</th>
+                            <th class="align-middle min-w-[9.5rem]">Payment date &amp; time</th>
+                            <th class="align-middle min-w-[11rem]">Payment method</th>
+                            <th class="align-middle min-w-[10rem]">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-glass border-t border-glass">
+                        {% for p in payments %}
+                        {% set del_stat = p['delivery_status'] or 'Pending' %}
+                        {% set pm_raw = (p['payment_method']|default('', true))|lower %}
+                        <tr class="hover:bg-overlay/80 transition-colors">
+                            <td class="font-semibold text-main">{{ p['product_name'] }}</td>
+                            <td class="font-medium text-muted">{{ p['customer'] }}</td>
+                            <td class="font-bold text-main whitespace-nowrap text-right">₹{{ p['amount'] }}</td>
+                            <td>
+                                {% if p['status'] == 'Accepted' %}
+                                    <span class="badge badge-accepted"><i class="fa-solid fa-circle-check"></i> Payment Verified Successfully</span>
+                                {% elif p['status'] in ['Completed', 'Pending Vendor Verification'] %}
+                                    <span class="badge badge-pending"><i class="fa-solid fa-hourglass-half"></i> Pending Verification</span>
+                                {% elif p['status'] == 'Payment Not Received' %}
+                                    <span class="badge badge-outofstock"><i class="fa-solid fa-triangle-exclamation"></i> Payment Not Received</span>
+                                {% elif p['status'] == 'Out Of Stock' %}
+                                    <span class="badge badge-outofstock"><i class="fa-solid fa-xmark"></i> Out Of Stock</span>
+                                {% elif p['status'] == 'Refund Pending' %}
+                                    <span class="badge badge-pending"><i class="fa-solid fa-clock-rotate-left"></i> Refund Pending</span>
+                                {% elif p['status'] == 'Refund Completed' %}
+                                    <span class="badge badge-delivered"><i class="fa-solid fa-money-bill-transfer"></i> Refund Completed</span>
+                                {% else %}
+                                    <span class="badge badge-pending"><i class="fa-solid fa-hourglass-half"></i> {{ p['status'] }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if del_stat == 'Pending' %}badge-pending
+                                    {% elif del_stat == 'Accepted' %}badge-accepted
+                                    {% elif del_stat == 'Processing' %}badge-processing
+                                    {% elif del_stat == 'Shipped' %}badge-shipped
+                                    {% elif del_stat == 'Out For Delivery' %}badge-outfordelivery
+                                    {% elif del_stat == 'Delivered' %}badge-delivered
+                                    {% else %}badge-outofstock{% endif %} text-[10px] px-2 py-0.5">
+                                    {{ del_stat }}
+                                </span>
+                            </td>
+                            <td class="text-sm text-muted whitespace-nowrap"><i class="fa-regular fa-calendar mr-1"></i>{{ p['payment_date']|indian_date }}</td>
+                            <td>
+                                {% if pm_raw == 'upi' %}
+                                <span class="badge badge-pay-upi inline-flex items-start gap-2"><i class="fa-solid fa-mobile-screen mt-0.5"></i><span>{{ p['payment_method']|payment_method_label }}</span></span>
+                                {% elif pm_raw == 'card' %}
+                                <span class="badge badge-pay-card inline-flex items-start gap-2"><i class="fa-regular fa-credit-card mt-0.5"></i><span>{{ p['payment_method']|payment_method_label }}</span></span>
+                                {% else %}
+                                <span class="badge badge-pay-legacy inline-flex items-start gap-2"><i class="fa-solid fa-clock-rotate-left mt-0.5"></i><span>{{ p['payment_method']|payment_method_label }}</span></span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if p['status'] == 'Accepted' %}
+                                    <button type="button" disabled class="px-3 py-1.5 rounded-lg bg-green-500/10 text-green-500 border border-green-500/30 text-xs font-medium cursor-not-allowed opacity-90">
+                                        <i class="fa-solid fa-check"></i> Verified
+                                    </button>
+                                {% elif p['status'] == 'Refund Completed' %}
+                                    <button type="button" disabled class="px-3 py-1.5 rounded-lg bg-green-500/10 text-green-500 border border-green-500/30 text-xs font-medium cursor-not-allowed opacity-90">
+                                        <i class="fa-solid fa-check"></i> Refunded
+                                    </button>
+                                {% elif p['status'] == 'Out Of Stock' %}
+                                    <span class="text-muted text-xs">—</span>
+                                {% elif p['status'] == 'Refund Pending' %}
+                                    <form method="POST" action="/process_refund" class="inline">
+                                        <input type="hidden" name="payment_id" value="{{ p['id'] }}">
+                                        <button type="submit" class="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition-colors hover:shadow-md">Process Refund</button>
+                                    </form>
+                                {% elif p['status'] == 'Payment Not Received' %}
+                                    <span class="text-muted text-xs leading-tight block max-w-[8rem]">Awaiting customer payment</span>
+                                {% elif p['status'] in ['Completed', 'Pending Vendor Verification'] %}
+                                    <div class="flex flex-col gap-1.5 items-stretch">
+                                        <form method="POST" action="/update_payment" class="inline">
+                                            <input type="hidden" name="payment_id" value="{{ p['id'] }}">
+                                            <input type="hidden" name="status" value="Accepted">
+                                            <button type="submit" class="btn-glow w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-transform hover:scale-[1.02] active:scale-[0.98]">Verify Payment</button>
+                                        </form>
+                                        <form method="POST" action="/update_payment" class="inline">
+                                            <input type="hidden" name="payment_id" value="{{ p['id'] }}">
+                                            <input type="hidden" name="status" value="Payment Not Received">
+                                            <button type="submit" class="w-full px-3 py-1.5 rounded-lg text-xs font-medium border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">Payment Not Received</button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <form method="POST" action="/update_payment" class="inline">
+                                        <input type="hidden" name="payment_id" value="{{ p['id'] }}">
+                                        <input type="hidden" name="status" value="Accepted">
+                                        <button type="submit" class="btn-glow px-3 py-1.5 rounded-lg text-xs font-medium">Verify Payment</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+
+            <div class="md:hidden p-4 space-y-4">
+                {% for p in payments %}
+                {% set del_stat = p['delivery_status'] or 'Pending' %}
+                {% set pm_raw = (p['payment_method']|default('', true))|lower %}
+                <div class="payment-history-card rounded-xl border border-glass bg-overlay/40 p-4 transition-shadow hover:shadow-lg">
+                    {% if session['role'] == 'customer' %}
+                    <div class="flex gap-3 mb-3">
+                        {% if p['product_image'] %}
+                        <img src="{{ url_for('static', filename=p['product_image']|resolve_image) }}" alt="" class="w-16 h-16 shrink-0 rounded-lg object-contain bg-slate-700/30 border border-glass">
+                        {% else %}
+                        <div class="w-16 h-16 shrink-0 rounded-lg bg-overlay flex items-center justify-center text-muted/50 border border-glass"><i class="fa-solid fa-box-open text-xl"></i></div>
+                        {% endif %}
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-main leading-snug">{{ p['product_name'] }}</div>
+                            <div class="text-xs text-muted mt-1"><i class="fa-solid fa-store text-indigo-400 mr-1"></i>{{ p['vendor'] }}</div>
+                        </div>
+                        <div class="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500 shrink-0">₹{{ p['amount'] }}</div>
+                    </div>
+                    {% else %}
+                    <div class="flex justify-between items-start gap-3 mb-3">
+                        <div class="min-w-0">
+                            <div class="text-xs text-muted font-medium">Product</div>
+                            <div class="font-bold text-main leading-snug">{{ p['product_name'] }}</div>
+                            <div class="text-xs text-muted mt-2"><i class="fa-solid fa-user text-pink-400 mr-1"></i>{{ p['customer'] }}</div>
+                        </div>
+                        <div class="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500 shrink-0">₹{{ p['amount'] }}</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        {% if pm_raw == 'upi' %}
+                        <span class="badge badge-pay-upi inline-flex items-start gap-2 w-full justify-start"><i class="fa-solid fa-mobile-screen mt-0.5"></i><span>{{ p['payment_method']|payment_method_label }}</span></span>
+                        {% elif pm_raw == 'card' %}
+                        <span class="badge badge-pay-card inline-flex items-start gap-2 w-full justify-start"><i class="fa-regular fa-credit-card mt-0.5"></i><span>{{ p['payment_method']|payment_method_label }}</span></span>
+                        {% else %}
+                        <span class="badge badge-pay-legacy inline-flex items-start gap-2 w-full justify-start"><i class="fa-solid fa-clock-rotate-left mt-0.5"></i><span>{{ p['payment_method']|payment_method_label }}</span></span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        {% if p['status'] == 'Accepted' %}
+                            <span class="badge badge-accepted"><i class="fa-solid fa-circle-check"></i> Payment Verified Successfully</span>
+                        {% elif p['status'] in ['Completed', 'Pending Vendor Verification'] %}
+                            <span class="badge badge-pending"><i class="fa-solid fa-hourglass-half"></i> Pending Verification</span>
+                        {% elif p['status'] == 'Payment Not Received' %}
+                            <span class="badge badge-outofstock"><i class="fa-solid fa-triangle-exclamation"></i> Payment Not Received</span>
+                        {% elif p['status'] == 'Out Of Stock' %}
+                            <span class="badge badge-outofstock"><i class="fa-solid fa-xmark"></i> Out Of Stock</span>
+                        {% elif p['status'] == 'Refund Pending' %}
+                            <span class="badge badge-pending"><i class="fa-solid fa-clock-rotate-left"></i> Refund Pending</span>
+                        {% elif p['status'] == 'Refund Completed' %}
+                            <span class="badge badge-delivered"><i class="fa-solid fa-money-bill-transfer"></i> Refund Completed</span>
+                        {% else %}
+                            <span class="badge badge-pending"><i class="fa-solid fa-hourglass-half"></i> {{ p['status'] }}</span>
+                        {% endif %}
+                        <span class="badge 
+                            {% if del_stat == 'Pending' %}badge-pending
+                            {% elif del_stat == 'Accepted' %}badge-accepted
+                            {% elif del_stat == 'Processing' %}badge-processing
+                            {% elif del_stat == 'Shipped' %}badge-shipped
+                            {% elif del_stat == 'Out For Delivery' %}badge-outfordelivery
+                            {% elif del_stat == 'Delivered' %}badge-delivered
+                            {% else %}badge-outofstock{% endif %} text-[10px] px-2 py-0.5">
+                            {{ del_stat }}
+                        </span>
+                    </div>
+                    <div class="text-xs text-muted space-y-1 border-t border-glass pt-3">
+                        <div><i class="fa-regular fa-calendar mr-1"></i><span class="text-main/90">Paid:</span> {{ p['payment_date']|indian_date }}</div>
+                    </div>
+                    {% if session['role'] == 'vendor' %}
+                    <div class="mt-3 pt-3 border-t border-glass flex flex-col gap-2">
+                        {% if p['status'] == 'Accepted' %}
+                            <button type="button" disabled class="py-2 rounded-lg bg-green-500/10 text-green-500 border border-green-500/30 text-sm font-medium cursor-not-allowed">Verified</button>
+                        {% elif p['status'] == 'Refund Completed' %}
+                            <button type="button" disabled class="py-2 rounded-lg bg-green-500/10 text-green-500 border border-green-500/30 text-sm font-medium cursor-not-allowed">Refunded</button>
+                        {% elif p['status'] == 'Out Of Stock' %}
+                            <span class="text-muted text-sm text-center">—</span>
+                        {% elif p['status'] == 'Refund Pending' %}
+                            <form method="POST" action="/process_refund">
+                                <input type="hidden" name="payment_id" value="{{ p['id'] }}">
+                                <button type="submit" class="w-full py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600">Process Refund</button>
+                            </form>
+                        {% elif p['status'] == 'Payment Not Received' %}
+                            <p class="text-center text-xs text-muted">Awaiting customer payment</p>
+                        {% elif p['status'] in ['Completed', 'Pending Vendor Verification'] %}
+                            <form method="POST" action="/update_payment">
+                                <input type="hidden" name="payment_id" value="{{ p['id'] }}">
+                                <input type="hidden" name="status" value="Accepted">
+                                <button type="submit" class="btn-glow w-full py-2 rounded-lg text-sm font-medium">Verify Payment</button>
+                            </form>
+                            <form method="POST" action="/update_payment">
+                                <input type="hidden" name="payment_id" value="{{ p['id'] }}">
+                                <input type="hidden" name="status" value="Payment Not Received">
+                                <button type="submit" class="w-full py-2 rounded-lg text-sm font-medium border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20">Payment Not Received</button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="/update_payment">
+                                <input type="hidden" name="payment_id" value="{{ p['id'] }}">
+                                <input type="hidden" name="status" value="Accepted">
+                                <button type="submit" class="btn-glow w-full py-2 rounded-lg text-sm font-medium">Verify Payment</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="glass-panel p-12 text-center rounded-2xl">
+            <div class="text-5xl text-muted mb-4"><i class="fa-solid fa-wallet"></i></div>
+            <h3 class="text-xl font-bold mb-2 text-main">No Transactions Yet</h3>
+            <p class="text-muted">Payment history will appear here once transactions are made.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
