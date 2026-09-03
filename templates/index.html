@@ -9,7 +9,7 @@
 {% block content %}
 <!-- Landing Page Navigation -->
 <header class="glass-panel sticky top-4 z-50 px-6 py-3.5 flex justify-between items-center mb-8 rounded-2xl border border-glass shadow-xl backdrop-blur-xl">
-    <a href="/" class="flex items-center gap-2.5 text-2xl font-bold text-main group">
+    <a href="{% if session.get('user') %}/dashboard{% else %}/{% endif %}" class="flex items-center gap-2.5 text-2xl font-bold text-main group">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/25 group-hover:scale-105 transition-transform">
             <i class="fa-solid fa-store text-lg"></i>
         </div>
@@ -20,7 +20,7 @@
     <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-muted">
         <a href="#highlights" class="hover:text-orange-400 transition-colors">Platform Highlights</a>
         <a href="#how-it-works" class="hover:text-orange-400 transition-colors">How It Works</a>
-        <a href="#showcase" class="hover:text-orange-400 transition-colors">Live Showcase</a>
+        <a href="#showcase" class="hover:text-orange-400 transition-colors">Catalogue Preview</a>
         <a href="#security" class="hover:text-orange-400 transition-colors">Enterprise Security</a>
     </nav>
 
@@ -30,8 +30,19 @@
             <i class="fa-solid fa-moon dark-icon"></i>
             <i class="fa-solid fa-sun light-icon hidden"></i>
         </button>
-        <a href="/login" class="px-4 py-2 rounded-xl text-sm font-semibold glass-panel hover:bg-white/10 text-main transition-colors">Sign In</a>
-        <a href="/register" class="btn-glow px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-md shadow-orange-500/20">Get Started</a>
+        {% if session.get('user') %}
+            <a href="/dashboard" class="btn-glow px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-md shadow-orange-500/20 flex items-center gap-2">
+                <i class="fa-solid fa-gauge text-xs"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/logout" class="px-3.5 py-2 rounded-xl text-sm font-semibold glass-panel hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-colors flex items-center gap-1.5" title="Sign Out">
+                <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                <span class="hidden sm:inline">Logout</span>
+            </a>
+        {% else %}
+            <a href="/login" class="px-4 py-2 rounded-xl text-sm font-semibold glass-panel hover:bg-white/10 text-main transition-colors">Sign In</a>
+            <a href="/register" class="btn-glow px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-md shadow-orange-500/20">Get Started</a>
+        {% endif %}
     </div>
 </header>
 
@@ -47,7 +58,7 @@
             <!-- Live Status Pill -->
             <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full glass-panel border border-orange-500/30 text-xs font-semibold text-orange-400 mb-6 slide-up shadow-sm">
                 <span class="pulsing-dot"></span>
-                <span>Next-Generation Multi-Vendor Commerce</span>
+                <span>Full-Stack Marketplace Portfolio Project</span>
             </div>
 
             <!-- Main Heading -->
@@ -57,19 +68,30 @@
 
             <!-- Supporting Paragraph -->
             <p class="text-lg sm:text-xl text-muted font-normal leading-relaxed mb-8 max-w-2xl slide-up" style="animation-delay: 0.2s">
-                Vendora unites independent storefronts and modern shoppers in one unified marketplace. Experience seamless catalog management, multi-stage delivery tracking, and instant simulated UPI & Card checkouts.
+                Vendora is a full-stack marketplace demonstration platform built with Flask and SQLite. Discover products across independent vendor storefronts, test simulated UPI & Card checkouts, and experience real-time order lifecycle tracking.
             </p>
 
             <!-- CTA Button Row -->
             <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-4 mb-10 slide-up" style="animation-delay: 0.3s">
-                <a href="/register" class="btn-glow px-8 py-4 rounded-xl font-semibold text-base text-white shadow-xl shadow-orange-500/25 flex items-center justify-center gap-3 group">
-                    <span>Explore Marketplace</span>
-                    <i class="fa-solid fa-arrow-right text-sm group-hover:translate-x-1 transition-transform"></i>
-                </a>
-                <a href="/register" class="glass-card hover:bg-white/10 px-8 py-4 rounded-xl font-semibold text-base text-main border border-glass flex items-center justify-center gap-3 transition-colors">
-                    <i class="fa-solid fa-store text-orange-400"></i>
-                    <span>Start Selling as Vendor</span>
-                </a>
+                {% if session.get('user') %}
+                    <a href="/dashboard" class="btn-glow px-8 py-4 rounded-xl font-semibold text-base text-white shadow-xl shadow-orange-500/25 flex items-center justify-center gap-3 group">
+                        <i class="fa-solid fa-gauge"></i>
+                        <span>Open Dashboard</span>
+                    </a>
+                    <a href="/products" class="glass-card hover:bg-white/10 px-8 py-4 rounded-xl font-semibold text-base text-main border border-glass flex items-center justify-center gap-3 transition-colors">
+                        <i class="fa-solid fa-box text-orange-400"></i>
+                        <span>Browse Products</span>
+                    </a>
+                {% else %}
+                    <a href="/login" class="btn-glow px-8 py-4 rounded-xl font-semibold text-base text-white shadow-xl shadow-orange-500/25 flex items-center justify-center gap-3 group">
+                        <span>Explore Demo Marketplace</span>
+                        <i class="fa-solid fa-arrow-right text-sm group-hover:translate-x-1 transition-transform"></i>
+                    </a>
+                    <a href="/register" class="glass-card hover:bg-white/10 px-8 py-4 rounded-xl font-semibold text-base text-main border border-glass flex items-center justify-center gap-3 transition-colors">
+                        <i class="fa-solid fa-store text-orange-400"></i>
+                        <span>Register as Vendor</span>
+                    </a>
+                {% endif %}
             </div>
 
             <!-- Social Proof & Micro-Trust Badges -->
@@ -77,20 +99,16 @@
                 <div class="flex items-center gap-2">
                     <div class="flex text-amber-400 text-sm">
                         <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
                     </div>
-                    <span class="font-semibold text-main">4.9/5 Rating</span>
+                    <span class="font-semibold text-main">{{ avg_rating }}/5 Demo Rating</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-shield-check text-green-400 text-sm"></i>
-                    <span>100% Verified Stores</span>
+                    <i class="fa-solid fa-building text-blue-400 text-sm"></i>
+                    <span>Role-Based Vendor Platform</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-bolt text-yellow-400 text-sm"></i>
-                    <span>Instant UPI & Card Checkout</span>
+                    <span>Simulated UPI & Card Checkout</span>
                 </div>
             </div>
 
@@ -204,9 +222,9 @@
                                     <span class="text-2xl font-black text-main font-mono">₹4,999</span>
                                     <span class="text-[11px] font-semibold text-green-400 ml-1">38% OFF</span>
                                 </div>
-                                <a href="/register" class="btn-glow px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md shadow-orange-500/20 flex items-center gap-1.5">
+                                <a href="{% if session.get('user') %}/products{% else %}/login{% endif %}" class="btn-glow px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md shadow-orange-500/20 flex items-center gap-1.5">
                                     <i class="fa-solid fa-cart-shopping"></i>
-                                    <span>Order Now</span>
+                                    <span>{% if session.get('user') %}Browse Products{% else %}Explore Products{% endif %}</span>
                                 </a>
                             </div>
                         </div>
@@ -232,27 +250,27 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
         
         <div class="glass-card p-6 rounded-2xl text-center border border-glass">
-            <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500 font-mono mb-1">50+</p>
-            <p class="text-xs sm:text-sm font-semibold text-main">Curated Products</p>
+            <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500 font-mono mb-1">{{ product_count }}+</p>
+            <p class="text-xs sm:text-sm font-semibold text-main">Seeded Demo Products</p>
             <p class="text-[11px] text-muted mt-0.5">Electronics, Apparel & Home</p>
         </div>
 
         <div class="glass-card p-6 rounded-2xl text-center border border-glass">
-            <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500 font-mono mb-1">100%</p>
-            <p class="text-xs sm:text-sm font-semibold text-main">Tenant Data Isolation</p>
-            <p class="text-[11px] text-muted mt-0.5">Encapsulated vendor storage</p>
+            <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500 font-mono mb-1">{{ vendor_count }}</p>
+            <p class="text-xs sm:text-sm font-semibold text-main">Active Demo Vendors</p>
+            <p class="text-[11px] text-muted mt-0.5">Simulated storefront accounts</p>
         </div>
 
         <div class="glass-card p-6 rounded-2xl text-center border border-glass">
-            <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 font-mono mb-1">Instant</p>
-            <p class="text-xs sm:text-sm font-semibold text-main">Simulated Payments</p>
-            <p class="text-[11px] text-muted mt-0.5">UPI QR, Apps & Card checkouts</p>
+            <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 font-mono mb-1">{{ order_count }}</p>
+            <p class="text-xs sm:text-sm font-semibold text-main">Demo Orders Logged</p>
+            <p class="text-[11px] text-muted mt-0.5">Order workflow simulation</p>
         </div>
 
         <div class="glass-card p-6 rounded-2xl text-center border border-glass">
-            <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-500 font-mono mb-1">4.9★</p>
-            <p class="text-xs sm:text-sm font-semibold text-main">Verified Feedback</p>
-            <p class="text-[11px] text-muted mt-0.5">Transparent merchant reviews</p>
+            <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-500 font-mono mb-1">{{ avg_rating }}★</p>
+            <p class="text-xs sm:text-sm font-semibold text-main">Average Demo Rating</p>
+            <p class="text-[11px] text-muted mt-0.5">Derived from seeded reviews</p>
         </div>
 
     </div>
@@ -439,7 +457,7 @@
                 <h4 class="font-bold text-main text-base mb-2">RGB Mechanical Keyboard</h4>
                 <div class="flex justify-between items-center mt-4 pt-3 border-t border-glass">
                     <span class="text-xl font-bold font-mono text-main">₹3,499</span>
-                    <a href="/register" class="px-3 py-1.5 rounded-lg text-xs font-semibold glass-panel hover:bg-orange-500/20 text-orange-400 transition-colors">
+                    <a href="{% if session.get('user') %}/products{% else %}/login{% endif %}" class="px-3 py-1.5 rounded-lg text-xs font-semibold glass-panel hover:bg-orange-500/20 text-orange-400 transition-colors">
                         View Product
                     </a>
                 </div>
@@ -462,7 +480,7 @@
                 <h4 class="font-bold text-main text-base mb-2">AMOLED Smart Watch Pro</h4>
                 <div class="flex justify-between items-center mt-4 pt-3 border-t border-glass">
                     <span class="text-xl font-bold font-mono text-main">₹2,499</span>
-                    <a href="/register" class="px-3 py-1.5 rounded-lg text-xs font-semibold glass-panel hover:bg-orange-500/20 text-orange-400 transition-colors">
+                    <a href="{% if session.get('user') %}/products{% else %}/login{% endif %}" class="px-3 py-1.5 rounded-lg text-xs font-semibold glass-panel hover:bg-orange-500/20 text-orange-400 transition-colors">
                         View Product
                     </a>
                 </div>
@@ -485,7 +503,7 @@
                 <h4 class="font-bold text-main text-base mb-2">Pro Performance Sneakers</h4>
                 <div class="flex justify-between items-center mt-4 pt-3 border-t border-glass">
                     <span class="text-xl font-bold font-mono text-main">₹1,999</span>
-                    <a href="/register" class="px-3 py-1.5 rounded-lg text-xs font-semibold glass-panel hover:bg-orange-500/20 text-orange-400 transition-colors">
+                    <a href="{% if session.get('user') %}/products{% else %}/login{% endif %}" class="px-3 py-1.5 rounded-lg text-xs font-semibold glass-panel hover:bg-orange-500/20 text-orange-400 transition-colors">
                         View Product
                     </a>
                 </div>
@@ -570,15 +588,24 @@
                 Ready to Experience <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-500 to-yellow-500">Vendora</span>?
             </h2>
             <p class="text-base sm:text-lg text-muted mb-8 leading-relaxed">
-                Join thousands of shoppers and trusted merchants already transacting seamlessly on the platform.
+                Explore a full-stack marketplace platform built to demonstrate real-world customer, vendor, and order management workflows.
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="/register" class="btn-glow px-8 py-4 rounded-xl font-bold text-white shadow-xl shadow-orange-500/30">
-                    Create Customer Account
-                </a>
-                <a href="/register" class="glass-card hover:bg-white/10 px-8 py-4 rounded-xl font-bold text-main border border-glass transition-colors">
-                    Register as Vendor
-                </a>
+                {% if session.get('user') %}
+                    <a href="/dashboard" class="btn-glow px-8 py-4 rounded-xl font-bold text-white shadow-xl shadow-orange-500/30">
+                        Open Dashboard
+                    </a>
+                    <a href="/products" class="glass-card hover:bg-white/10 px-8 py-4 rounded-xl font-bold text-main border border-glass transition-colors">
+                        Browse All Products
+                    </a>
+                {% else %}
+                    <a href="/register" class="btn-glow px-8 py-4 rounded-xl font-bold text-white shadow-xl shadow-orange-500/30">
+                        Create Customer Account
+                    </a>
+                    <a href="/register" class="glass-card hover:bg-white/10 px-8 py-4 rounded-xl font-bold text-main border border-glass transition-colors">
+                        Register as Vendor
+                    </a>
+                {% endif %}
             </div>
         </div>
     </div>

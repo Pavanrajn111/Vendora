@@ -735,7 +735,33 @@ def role_required(*roles):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    conn = get_db()
+    product_count = 0
+    vendor_count = 0
+    order_count = 0
+    avg_rating = 4.8
+    try:
+        p_row = conn.execute("SELECT COUNT(*) FROM products").fetchone()
+        if p_row:
+            product_count = p_row[0]
+        v_row = conn.execute("SELECT COUNT(*) FROM users WHERE role='vendor'").fetchone()
+        if v_row:
+            vendor_count = v_row[0]
+        o_row = conn.execute("SELECT COUNT(*) FROM orders").fetchone()
+        if o_row:
+            order_count = o_row[0]
+        r_row = conn.execute("SELECT ROUND(AVG(rating), 1) FROM reviews").fetchone()
+        if r_row and r_row[0]:
+            avg_rating = r_row[0]
+    except Exception:
+        pass
+    return render_template(
+        'index.html',
+        product_count=product_count,
+        vendor_count=vendor_count,
+        order_count=order_count,
+        avg_rating=avg_rating,
+    )
 
 # ---------------------------------
 # LOGIN & SETTINGS

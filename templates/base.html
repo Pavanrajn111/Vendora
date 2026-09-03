@@ -41,8 +41,8 @@
     <div class="bg-shape bg-shape-1"></div>
     <div class="bg-shape bg-shape-2"></div>
 
-    <!-- Main Navigation for Dashboard -->
-    {% if session.get('user') %}
+    <!-- Main Navigation for Dashboard (Not displayed on landing page to avoid duplicate navbar) -->
+    {% if session.get('user') and request.path != '/' %}
     <nav class="glass-panel sticky top-0 z-50 px-6 py-4 flex justify-between items-center mb-8">
         <div class="flex items-center gap-4">
             <button id="mobile-menu-btn" class="md:hidden text-2xl text-main hover:text-orange-400 transition-colors">
@@ -103,15 +103,15 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Floating Back to Dashboard Button (Hidden on actual dashboard) -->
-    {% if session.get('user') and request.path != '/dashboard' %}
+    <!-- Floating Back to Dashboard Button (Hidden on actual dashboard & landing page) -->
+    {% if session.get('user') and request.path != '/dashboard' and request.path != '/' %}
     <a href="/dashboard" class="btn-floating-dash">
         <i class="fa-solid fa-arrow-left"></i>
         <span class="hidden sm:inline">Back to Dashboard</span>
     </a>
     {% endif %}
 
-    <!-- Global Floating Theme Toggle for unauthenticated users -->
+    <!-- Global Floating Theme Toggle for unauthenticated users (except landing page which has navbar toggle) -->
     {% if not session.get('user') and request.path != '/' %}
     <button id="theme-toggle-floating" class="fixed bottom-6 right-6 z-50 text-xl text-muted hover:text-orange-400 transition-colors w-12 h-12 flex items-center justify-center rounded-full glass-card shadow-xl border border-glass cursor-pointer" title="Toggle Theme">
         <i class="fa-solid fa-moon dark-icon-float"></i>
@@ -119,19 +119,68 @@
     </button>
     {% endif %}
 
-    {% if not session.get('user') %}
-    <footer class="glass-panel mt-auto py-8">
-        <div class="container mx-auto px-4 text-center">
-            <div class="flex justify-center gap-6 mb-6">
-                <a href="#" class="text-2xl hover:text-orange-400 transition-colors"><i class="fa-brands fa-twitter"></i></a>
-                <a href="#" class="text-2xl hover:text-orange-400 transition-colors"><i class="fa-brands fa-linkedin"></i></a>
-                <a href="#" class="text-2xl hover:text-orange-400 transition-colors"><i class="fa-brands fa-github"></i></a>
+    <!-- Shared Platform & Portfolio Footer -->
+    <footer class="glass-panel mt-auto py-12 border-t border-glass">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+                <!-- Col 1: Platform Overview -->
+                <div class="md:col-span-2 space-y-3">
+                    <div class="flex items-center gap-2.5 text-xl font-bold text-main">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-500 to-orange-500 flex items-center justify-center text-white text-sm">
+                            <i class="fa-solid fa-store"></i>
+                        </div>
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-orange-500">Vendora</span>
+                    </div>
+                    <p class="text-xs text-muted leading-relaxed max-w-md">
+                        Vendora — Vendor & Customer Marketplace Platform. A full-stack Flask + SQLite portfolio project demonstrating role-based multi-vendor commerce, simulated UPI & Card checkouts, and order lifecycle management.
+                    </p>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-panel text-[11px] text-orange-400 border border-orange-500/25">
+                        <i class="fa-solid fa-code-branch"></i>
+                        <span>Portfolio Marketplace Demo Project</span>
+                    </div>
+                </div>
+
+                <!-- Col 2: Marketplace Navigation -->
+                <div>
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-main mb-3">Marketplace</h5>
+                    <ul class="space-y-2 text-xs text-muted">
+                        <li><a href="/products" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-box text-[10px]"></i> Browse Products</a></li>
+                        <li><a href="/#how-it-works" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-route text-[10px]"></i> How It Works</a></li>
+                        <li><a href="/#highlights" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-sparkles text-[10px]"></i> Platform Highlights</a></li>
+                        <li><a href="/#security" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-[10px]"></i> Security Architecture</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: Portal & Account -->
+                <div>
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-main mb-3">Portals & Account</h5>
+                    <ul class="space-y-2 text-xs text-muted">
+                        {% if session.get('user') %}
+                            <li><a href="/dashboard" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-gauge text-[10px]"></i> Dashboard ({{ session['user'] }})</a></li>
+                            <li><a href="/orders" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-cart-shopping text-[10px]"></i> My Orders</a></li>
+                            <li><a href="/settings" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-gear text-[10px]"></i> Account Settings</a></li>
+                            <li><a href="/logout" class="hover:text-red-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-right-from-bracket text-[10px]"></i> Sign Out</a></li>
+                        {% else %}
+                            <li><a href="/login" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-arrow-right-to-bracket text-[10px]"></i> Customer / Vendor Sign In</a></li>
+                            <li><a href="/register" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-user-plus text-[10px]"></i> Register as Customer</a></li>
+                            <li><a href="/register" class="hover:text-orange-400 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-store text-[10px]"></i> Start Selling as Vendor</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
             </div>
-            <p class="text-muted mb-2">Contact: support@vendora.market</p>
-            <p class="text-muted text-sm">&copy; 2026 Vendora. All rights reserved.</p>
+
+            <!-- Bottom Line -->
+            <div class="pt-6 border-t border-glass flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-muted">
+                <p>&copy; 2026 Vendora. Built as an open-source portfolio marketplace project under MIT License.</p>
+                <div class="flex items-center gap-4">
+                    <a href="https://github.com/Pavanrajn111/Vendora" target="_blank" rel="noopener noreferrer" class="hover:text-orange-400 transition-colors flex items-center gap-1.5">
+                        <i class="fa-brands fa-github text-sm"></i>
+                        <span>Source Code</span>
+                    </a>
+                </div>
+            </div>
         </div>
     </footer>
-    {% endif %}
 
     <script>
         // Theme Toggle Logic for Dashboard
