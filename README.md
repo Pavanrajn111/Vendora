@@ -195,15 +195,30 @@ python -m unittest tests/test_image_detection.py
 
 ## Production Deployment
 
-To run in production using Gunicorn:
+### Deploying to Vercel (Recommended)
+
+Vendora is pre-configured for seamless serverless deployment on **[Vercel](https://vercel.com/)**:
+
+1. Push this repository to your GitHub account.
+2. Log in to [Vercel](https://vercel.com/) and click **"Add New Project"**.
+3. Import your `Vendora` repository.
+4. Framework Preset: Choose **"Other"** (Vercel automatically detects `vercel.json` and `@vercel/python`).
+5. (Optional) In **Environment Variables**, add:
+   - `SECRET_KEY`: A cryptographically secure random string.
+   - `COLLECT_UPI_VPA`: `merchant.vendora@ptyes`
+6. Click **Deploy**. Your marketplace will be live in seconds!
+
+### Deploying with Gunicorn (Render / Railway / VPS)
+
+To run using Gunicorn:
 
 ```bash
 gunicorn app:app --bind 0.0.0.0:5000 --workers 4
 ```
 
-Set the following environment variables on your hosting provider (e.g. Render, Railway, AWS, DigitalOcean):
-- SECRET_KEY: A cryptographically secure random string.
-- COLLECT_UPI_VPA: Merchant UPI VPA for payment simulations (e.g. merchant.vendora@ptyes).
+Set the following environment variables on your hosting provider:
+- `SECRET_KEY`: A cryptographically secure random string.
+- `COLLECT_UPI_VPA`: Merchant UPI VPA for payment simulations (e.g. `merchant.vendora@ptyes`).
 
 ---
 

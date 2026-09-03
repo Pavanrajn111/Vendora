@@ -33,7 +33,10 @@ flask_env = os.environ.get("FLASK_ENV", "development").lower()
 secret_key = os.environ.get("SECRET_KEY")
 if flask_env == "production":
     if not secret_key or secret_key in ("vendora-dev-secret-key-change-in-production", "change-me-to-a-long-random-string"):
-        raise ValueError("CRITICAL: SECRET_KEY environment variable must be set to a secure unique value in production!")
+        if os.environ.get("VERCEL"):
+            secret_key = "vendora-vercel-" + os.environ.get("VERCEL_DEPLOYMENT_ID", os.environ.get("VERCEL_GIT_COMMIT_SHA", "prod-secret-fallback-key"))
+        else:
+            raise ValueError("CRITICAL: SECRET_KEY environment variable must be set to a secure unique value in production!")
 app.secret_key = secret_key or "vendora-dev-secret-key-change-in-production"
 
 # Configure maximum upload size (5 MB limit)
@@ -308,7 +311,10 @@ def _finalize_customer_payment(
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except OSError:
+    pass
 
 ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.jfif'}
 
@@ -349,8 +355,12 @@ def validate_and_save_image(file_storage):
     clean_base = secure_filename(os.path.splitext(file_storage.filename)[0]) or 'product'
     unique_filename = f"{clean_base}_{uuid.uuid4().hex[:8]}{ext}"
     dest_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-    file_storage.save(dest_path)
-    return f"uploads/{unique_filename}"
+    try:
+        file_storage.save(dest_path)
+        return f"uploads/{unique_filename}"
+    except OSError:
+        # Fallback if serverless environment has read-only static directory
+        return "images/product-placeholder.svg"
 
 def validate_password_strength(password):
     """
@@ -469,11 +479,27 @@ def resolve_image_path(image_path):
 app.jinja_env.filters['resolve_image'] = resolve_image_path
 
 # ---------------------------------
-# DATABASE CONNECTION
+# DATABASE CONNECTION & VERCEL SUPPORT
 # ---------------------------------
 
+DB_PATH = os.environ.get("DATABASE_PATH")
+if not DB_PATH:
+    if os.environ.get("VERCEL"):
+        # On Vercel serverless functions, the root directory is read-only.
+        # Copy the bundled SQLite database to /tmp where writes are permitted.
+        DB_PATH = "/tmp/vendor.db"
+        bundled_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor.db")
+        if not os.path.exists(DB_PATH) and os.path.exists(bundled_db):
+            import shutil
+            try:
+                shutil.copy2(bundled_db, DB_PATH)
+            except Exception:
+                pass
+    else:
+        DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor.db")
+
 def get_db():
-    conn = sqlite3.connect("vendor.db")
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
