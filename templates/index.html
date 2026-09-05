@@ -227,7 +227,7 @@
                                     <span class="text-2xl font-black text-main font-mono">₹4,999</span>
                                     <span class="text-[11px] font-semibold text-green-400 ml-1">38% OFF</span>
                                 </div>
-                                <a href="{% if session.get('user') %}/products{% else %}/login{% endif %}" class="btn-glow px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md shadow-orange-500/20 flex items-center gap-1.5">
+                                <a href="{% if session.get('user') %}/products{% else %}/register{% endif %}" class="btn-glow px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md shadow-orange-500/20 flex items-center gap-1.5">
                                     <i class="fa-solid fa-cart-shopping"></i>
                                     <span>{% if session.get('user') %}Browse Products{% else %}Explore Products{% endif %}</span>
                                 </a>
